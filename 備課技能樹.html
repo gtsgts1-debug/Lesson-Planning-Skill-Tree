@@ -1,0 +1,713 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>備課技能樹</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Layout: publisher tabs on top → subject chips → skill tree (left) + unit editor (right, stacks below on phones) */
+:root{
+  --bg:#f2f5f4; --surface:#ffffff; --sunk:#e8edeb; --ink:#1a2421; --muted:#5b6964; --line:#d6dfdb;
+  --hanlin:#1f5fa8; --kangxuan:#c95f22; --nani:#25805f;
+  --done:#2f8a57; --doing:#b97e0e; --todo:#97a39f; --danger:#b8383b;
+  --font-body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --font-num:"Space Grotesk","Noto Sans TC",system-ui,sans-serif;
+  --accent:var(--hanlin);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#111715; --surface:#19211f; --sunk:#141b19; --ink:#e4ebe8; --muted:#97a6a0; --line:#2b3633;
+  --hanlin:#74a9ec; --kangxuan:#ef9a62; --nani:#5ec49b;
+  --done:#5cc489; --doing:#e6b04c; --todo:#66736e; --danger:#ef7c7e; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111715; --surface:#19211f; --sunk:#141b19; --ink:#e4ebe8; --muted:#97a6a0; --line:#2b3633;
+  --hanlin:#74a9ec; --kangxuan:#ef9a62; --nani:#5ec49b;
+  --done:#5cc489; --doing:#e6b04c; --todo:#66736e; --danger:#ef7c7e; color-scheme:dark}
+body[data-pub="hanlin"]{--accent:var(--hanlin)}
+body[data-pub="kangxuan"]{--accent:var(--kangxuan)}
+body[data-pub="nani"]{--accent:var(--nani)}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.55}
+.wrap{max-width:1080px;margin:0 auto;padding-block:20px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:18px}
+h1{font-size:1.5rem;margin:0;text-wrap:balance}
+h2{font-size:1.05rem;margin:0}
+.top{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:12px}
+.sub{color:var(--muted);font-size:.85rem;margin:2px 0 0}
+.tabs{display:flex;gap:4px;background:var(--sunk);padding:4px;border-radius:10px}
+.tab{border:0;background:transparent;color:var(--muted);font:inherit;font-weight:700;padding:8px 18px;border-radius:7px;cursor:pointer}
+.tab[aria-selected="true"]{background:var(--surface);color:var(--accent);box-shadow:0 1px 3px rgb(0 0 0/.12)}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.summary{display:flex;flex-wrap:wrap;gap:8px 20px;align-items:center;font-size:.88rem;color:var(--muted)}
+.summary b{font-family:var(--font-num);color:var(--ink);font-variant-numeric:tabular-nums}
+.bar{flex:1 1 200px;height:8px;border-radius:99px;background:var(--sunk);overflow:hidden;display:flex}
+.bar span{height:100%}
+.grades{display:flex;flex-wrap:wrap;gap:10px 18px}
+.gset{display:flex;align-items:center;gap:6px;min-width:0}
+.gset > .lbl{white-space:nowrap;flex:none}
+.gset .lbl{font-size:.75rem;color:var(--muted);letter-spacing:.1em;font-weight:700;writing-mode:horizontal-tb;margin-right:2px}
+.gbtns{display:flex;gap:6px;flex-wrap:wrap}
+.gbtn{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:5px 4px 6px;min-width:52px;display:grid;justify-items:center;gap:3px;line-height:1.2}
+.gbtn b{font-size:.92rem}
+.gbtn i{display:block;width:36px;height:4px;border-radius:99px;background:var(--sunk);overflow:hidden;font-style:normal}
+.gbtn i span{display:block;height:100%;background:var(--done)}
+.gbtn small{font-family:var(--font-num);font-size:.7rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.gbtn:hover{border-color:var(--accent)}
+.gbtn[aria-pressed="true"]{border-color:var(--accent);background:var(--accent);color:var(--surface)}
+.gbtn[aria-pressed="true"] small{color:var(--surface)}
+.gbtn[aria-pressed="true"] i{background:color-mix(in srgb,var(--surface) 35%,transparent)}
+.gbtn[aria-pressed="true"] i span{background:var(--surface)}
+.semseg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface)}
+.semseg button{border:0;background:transparent;padding:10px 14px;font-weight:700;color:var(--muted)}
+.semseg button+button{border-left:1px solid var(--line)}
+.semseg button[aria-pressed="true"]{background:var(--accent);color:var(--surface)}
+.srcnote{flex-basis:100%;font-size:.8rem;color:var(--muted);margin:0}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+.chip{flex:0 0 auto;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 14px;display:flex;gap:8px;align-items:center;white-space:nowrap}
+.chip small{font-family:var(--font-num);color:var(--muted);font-variant-numeric:tabular-nums}
+.chip[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,var(--surface))}
+.chip.add{border-style:dashed;color:var(--muted)}
+.main{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:18px;align-items:start}
+@media (max-width:820px){.main{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;min-width:0}
+.panel-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px}
+.ghost{border:1px solid var(--line);background:transparent;border-radius:8px;padding:5px 12px;font-size:.85rem}
+.ghost:hover{border-color:var(--accent);color:var(--accent)}
+.primary{border:0;background:var(--accent);color:var(--surface);border-radius:8px;padding:7px 14px;font-weight:700;font-size:.88rem}
+.danger{border:1px solid var(--danger);color:var(--danger);background:transparent;border-radius:8px;padding:5px 12px;font-size:.85rem}
+.danger.solid{background:var(--danger);color:var(--surface)}
+/* tree */
+.tree{list-style:none;margin:0;padding:0}
+.node{display:grid;grid-template-columns:56px minmax(0,1fr);gap:12px;position:relative;padding-bottom:14px}
+.node:last-child{padding-bottom:0}
+.node:not(:last-child)::before{content:"";position:absolute;left:27px;top:52px;bottom:-2px;width:3px;border-radius:2px;background:var(--line)}
+.node.linked:not(:last-child)::before{background:var(--done)}
+.orb{width:56px;height:56px;border:0;background:transparent;padding:0;position:relative}
+.orb svg{width:56px;height:56px;display:block}
+.orb .num{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--font-num);font-weight:700;font-size:1.05rem}
+.node.done .num{color:var(--done)}
+.node.locked .orb,.node.locked .card{opacity:.55}
+.card{border:1px solid var(--line);border-radius:10px;padding:9px 12px;background:var(--surface);text-align:left;width:100%;display:grid;gap:4px;min-width:0}
+.card:hover{border-color:var(--accent)}
+.node.sel .card{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 25%,transparent)}
+.card .name{font-weight:700;overflow-wrap:anywhere}
+.meta{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:.8rem;color:var(--muted);align-items:center}
+.pill{white-space:nowrap;font-size:.75rem;font-weight:700;padding:1px 9px;border-radius:99px;letter-spacing:.03em}
+.pill.todo{background:color-mix(in srgb,var(--todo) 18%,transparent);color:var(--muted)}
+.pill.doing{background:color-mix(in srgb,var(--doing) 18%,transparent);color:var(--doing)}
+.pill.done{background:color-mix(in srgb,var(--done) 18%,transparent);color:var(--done)}
+.addunit{margin-top:14px;width:100%;border:1px dashed var(--line);background:transparent;border-radius:10px;padding:10px;color:var(--muted)}
+.addunit:hover{color:var(--accent);border-color:var(--accent)}
+.empty{color:var(--muted);text-align:center;padding:28px 8px}
+/* editor */
+.editor{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px);display:grid;gap:14px}
+.field{display:grid;gap:4px}
+.field label,.lbl{font-size:.78rem;color:var(--muted);font-weight:500;letter-spacing:.04em}
+input,textarea,select{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 10px;width:100%;min-width:0}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;background:transparent;padding:7px 4px;font-size:.88rem}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"].todo{background:var(--todo);color:var(--surface)}
+.seg button[aria-pressed="true"].doing{background:var(--doing);color:var(--surface)}
+.seg button[aria-pressed="true"].done{background:var(--done);color:var(--surface)}
+.order{display:flex;gap:6px;align-items:center;font-size:.88rem}
+.order b{font-family:var(--font-num);margin-right:auto}
+.checks{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+.checks li{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center}
+.checks input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent)}
+.checks li.ok span{text-decoration:line-through;color:var(--muted)}
+.x{border:0;background:transparent;color:var(--muted);font-size:1.1rem;line-height:1;padding:2px 6px;border-radius:6px}
+.x:hover{color:var(--danger)}
+.inline{display:grid;grid-template-columns:1fr auto;gap:6px}
+.kv{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr) auto;gap:6px;align-items:center}
+.stack{display:grid;gap:6px}
+hr{border:0;border-top:1px solid var(--line);margin:0}
+.confirm{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:.85rem;color:var(--danger)}
+details.backup{font-size:.88rem}
+details.backup summary{cursor:pointer;color:var(--muted)}
+details.backup .stack{margin-top:10px}
+.note{font-size:.8rem;color:var(--muted)}
+.msg{font-size:.82rem}
+.msg.err{color:var(--danger)} .msg.ok{color:var(--done)}
+.syncbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;font-size:.82rem;color:var(--muted)}
+.modeseg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+.modeseg button{border:0;background:transparent;padding:5px 12px;font-size:.82rem;color:var(--muted);font-weight:500}
+.modeseg button+button{border-left:1px solid var(--line)}
+.modeseg button[aria-pressed="true"]{background:var(--sunk);color:var(--ink);font-weight:700}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--todo);margin-right:6px;vertical-align:1px}
+.dot.ok{background:var(--done)} .dot.busy{background:var(--doing)} .dot.err{background:var(--danger)}
+.week{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:12px;padding:12px 16px;display:grid;gap:10px;min-width:0}
+.week-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px 12px}
+.week-head h2{font-size:1rem}
+.week-head h2 b{font-family:var(--font-num);color:var(--accent);font-size:1.25rem}
+.week-list{display:flex;flex-wrap:wrap;gap:6px}
+.wk-item{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:5px 10px;font-size:.84rem;display:flex;gap:6px;align-items:center;text-align:left;max-width:100%}
+.wk-item:hover{border-color:var(--accent)}
+.wk-item .subj{color:var(--muted);font-size:.76rem;white-space:nowrap}
+.wk-item .nm{overflow-wrap:anywhere}
+.wk-item.late{border-color:color-mix(in srgb,var(--danger) 45%,var(--line))}
+.wk-label{font-size:.76rem;font-weight:700;letter-spacing:.06em;color:var(--muted)}
+.wk-label.late{color:var(--danger)}
+.wk-set{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:end}
+.wk-set .field{min-width:150px}
+.pill.now{background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent)}
+.pill.late{background:color-mix(in srgb,var(--danger) 14%,transparent);color:var(--danger)}
+.chip .late{color:var(--danger);font-size:.75rem;font-weight:700}
+.links{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+.links li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:center}
+.links a{color:var(--accent);text-decoration:none;font-weight:500;overflow-wrap:anywhere}
+.links a:hover{text-decoration:underline}
+.links .host{display:block;font-size:.74rem;color:var(--muted);font-weight:400;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ltype{font-size:.72rem;font-weight:700;padding:1px 7px;border-radius:6px;background:var(--sunk);color:var(--muted);white-space:nowrap}
+.linkform{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px}
+.linkform .full{grid-column:1/-1}
+.linkform select{width:auto}
+.logs{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.logs li{border-left:3px solid var(--line);padding:2px 0 2px 10px;display:grid;gap:2px}
+.logs .lh{display:flex;gap:8px;align-items:center;font-size:.76rem;color:var(--muted)}
+.logs .lh b{font-family:var(--font-num);color:var(--ink);font-variant-numeric:tabular-nums}
+.logs .lh .x{margin-left:auto}
+.logs p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font-size:.9rem}
+.logform{display:grid;gap:6px}
+.logform .row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px}
+textarea{resize:vertical;min-height:64px;line-height:1.5}
+@media (prefers-reduced-motion:no-preference){.orb circle.prog{transition:stroke-dashoffset .35s ease}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>備課技能樹</h1>
+      <p class="sub">依版本 → 年級 → 科目 → 單元順序，逐一點亮每個備課節點</p>
+      <div class="syncbar" id="syncbar"></div>
+    </div>
+    <nav class="tabs" role="tablist" id="tabs"></nav>
+  </header>
+
+  <nav class="grades" id="grades" aria-label="年級"></nav>
+  <section class="summary" id="summary"></section>
+  <section class="week" id="week" aria-live="polite"></section>
+  <div class="chips" id="chips" role="group" aria-label="科目"></div>
+
+  <div class="main">
+    <section class="panel" id="treePanel"></section>
+    <aside class="panel editor" id="editor"></aside>
+  </div>
+
+  <details class="backup panel" id="backup">
+    <summary>備份與還原資料</summary>
+    <div class="stack">
+      <p class="note">「我的進度」會同步到你的 Claude 帳號，「團隊共用」由分享對象一起編輯。也可以複製備份文字另存，要還原時貼回下方再按「匯入」（匯入會覆蓋目前檢視中的進度）。</p>
+      <textarea id="backupText" rows="5" placeholder="按「產生備份」後會出現在這裡，或貼上先前的備份文字"></textarea>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        <button class="ghost" id="btnExport">產生備份並複製</button>
+        <button class="ghost" id="btnImport">匯入</button>
+        <button class="ghost" id="btnReset">恢復範例資料</button>
+      </div>
+      <p class="msg" id="backupMsg" aria-live="polite"></p>
+    </div>
+  </details>
+</div>
+
+<script>
+const PUBS=[["hanlin","翰林"],["kangxuan","康軒"],["nani","南一"]];
+const ST={todo:"未開始",doing:"備課中",done:"已完成"};
+const DEFAULT_CHECKS=["研讀教師手冊","教學簡報","學習單","評量設計"];
+const KEY="prep-skill-tree-v3",OLDKEYS=["prep-skill-tree-v2","prep-skill-tree-v1"];
+const GRADES=[1,2,3,4,5,6,7,8,9];
+const SEMS=["上","下"];
+const GNAME=["","一年級","二年級","三年級","四年級","五年級","六年級","七年級","八年級","九年級"];
+const GSHORT=["","一","二","三","四","五","六","國一","國二","國三"];
+const uid=()=>Math.random().toString(36).slice(2,9);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+// 五年級 115 學年度各版本單元（整理自各校公開課程計畫）
+const G5={"kangxuan":{"上":[["國語",[["第一課 蚊帳大使","1–2","","第一單元 擁夢飛翔"],["第二課 從空中看臺灣","3","",""],["第三課 攀岩高手","4","",""],["學習地圖一","5","",""],["第四課 恆久的美","6","","第二單元 生活中的藝術"],["第五課 它抓得住你｜商標的故事","7","",""],["第六課 故事「動」起來","8","",""],["學習地圖二","9","",""],["閱讀階梯一 畫家的天空","10","",""],["第七課 為生命找出口","11","","第三單元 生命啟示錄"],["第八課 最勇敢的女孩","12","",""],["第九課 在挫折中成長","13","",""],["學習地圖三","14","",""],["第十課 山中寄情","15","","第四單元 與自然共舞"],["第十一課 與達駭黑熊走入山林","16","",""],["第十二課 荒島上的國王","17–18","",""],["學習地圖四","19","",""],["閱讀階梯二 分享的金牌","20–21","",""]]],["數學",[["第一單元 多位小數與加減","1–2","8",""],["第二單元 因數與公因數","3–4","8",""],["第三單元 倍數與公倍數","5–6","8",""],["第四單元 擴分、約分與通分","7–8","8",""],["第五單元 多邊形與扇形","9–10","8",""],["第六單元 異分母分數的加減","11–12","8",""],["第七單元 線對稱圖形","13–14","8",""],["第八單元 整數四則運算","15–16","8",""],["第九單元 面積","17–18","8",""],["第十單元 柱體、錐體和球","19–20","8",""]]],["自然科學",[["一、動物世界","1–5","","活動一 動物如何求生存／活動二 動物具有社會行為嗎／活動三 動物如何延續生命"],["二、探索聲光世界","5–9","","活動一 樂音與噪音有什麼不同／活動二 樂器如何發出不同的聲音／活動三 光有什麼特性與現象"],["三、神祕的天空","10–14","","活動一 太陽的位置和四季有關嗎／活動二 太陽系有哪些成員／活動三 四季的星空有什麼不一樣"],["四、燃燒與生鏽","15–21","","活動一 空氣與燃燒有什麼關係／活動二 燃燒的條件與如何滅火／活動三 為何會生鏽與如何防鏽"]]],["社會",[["一、臺灣我的家","1–6","","1 臺灣的地理位置與文化發展有何關係？／2 社會規範如何影響人們的行為？／3 為什麼法律與我們的生活有關係？"],["二、臺灣的自然環境與生活","7–9","","1 地形如何影響我們的生活？／2 氣候如何影響我們的生活？"],["三、尋根探源話臺灣","10–13","","1 史前人類如何利用環境與資源來生活？／2 原住民族如何與環境共存？"],["四、大航海時代的臺灣","14–19","","1 大航海時代臺灣如何登上世界舞臺？／2 大航海時代有哪些人經營臺灣？／3 大航海時代對臺灣帶來什麼影響？"],["主題探究與實作 守護臺灣最美的風景","20","",""]]]],"下":[["國語",[["第一課 你會怎麼回答？","1–2","","第一單元 換一個角度"],["第二課 智救養馬人","3","",""],["第三課 真正的「聰明」","4","",""],["學習地圖一","5","",""],["第四課 小記者，出動！","6","","第二單元 職業任意門"],["第五課 奇幻光芒的祕密","7","",""],["第六課 人「聲」就是戲","8–9","",""],["學習地圖二","10","",""],["閱讀階梯一 「溜」出不一樣的人生——楊元慶","11","",""],["第七課 題西林壁","12","","第三單元 山與海的呼喚"],["第八課 海洋的殺手","13","",""],["第九課 你想做人魚嗎？","14","",""],["學習地圖三","15","",""],["第十課 玉米人的奇蹟","16","","第四單元 來自遠古的神話"],["第十一課 幸福的火苗","17","",""],["第十二課 神農嘗百草","18","",""],["學習地圖四","19","",""],["閱讀階梯二 旗魚王","20–21","",""]]],["數學",[["第一單元 體積","1–2","8",""],["第二單元 分數的計算","3–4","8",""],["第三單元 容積","5–6","8",""],["第四單元 小數的乘法","7–8","8",""],["第五單元 大數與折線圖","9–10","8",""],["第六單元 整數、小數除以整數","11–12","8",""],["第七單元 表面積","13–14","8",""],["第八單元 比率與百分率","15–17","12",""],["第九單元 時間的乘除","18–19","8",""],["第十單元 生活中的大單位","20","4",""]]],["自然科學",[["一、力與運動","1–5","","活動一 力有哪些種類／活動二 如何知道力的大小／活動三 如何保持力的平衡"],["二、大地的奧祕","6–10","","活動一 地層裡有什麼／活動二 大地如何變動／活動三 大地變動有什麼影響"],["三、植物世界面面觀","11–15","","活動一 植物如何獲取養分／活動二 植物有哪些繁殖方式／活動三 植物有哪些妙招"],["四、熱的作用與傳播","15–21","","活動一 溫度改變對物質的體積有何影響／活動二 熱是如何傳播／活動三 如何保溫與散熱"]]],["社會",[["一、我們的經濟活動","1–4","","1 生產活動如何影響人們的生活？／2 消費與理財如何影響人們的生活？"],["二、清帝國時期臺灣的發展與改變","5–10","","1 移民的開墾如何改變臺灣社會？／2 開港通商如何影響經濟與文化？／3 開港後清帝國的統治措施有什麼變化？"],["三、日治時期人民與政府的關係","11–13","","1 日本帝國如何統治臺灣？／2 殖民統治下臺灣人如何爭取權利？"],["四、日治時期的社會變遷","14–19","","1 日治時期的建設帶來什麼影響？／2 日治時期的教育有何改變與影響？／3 日治時期的社會文化有何改變與影響？"],["主題探究與實作 穿越時空探家園","20","",""]]]]},"hanlin":{"上":[["國語",[["第一課 你我之間","1","","第壹單元 當我們同在一起"],["第二課 風起，大家都在","2","",""],["第三課 廉頗與藺相如","3","",""],["統整活動一","4","",""],["第四課 來場快樂的桌遊","5","","第貳單元 生活大小事"],["第五課 超級英雄","6","",""],["第六課 世足賽的贏家","7","",""],["統整活動二","8","",""],["享閱讀一 煙會說話","9","",""],["第壹、貳單元複習","10","",""],["第七課 美景閒情——詩兩首","11","","第參單元 山的樂章"],["第八課 葫蘆瓜","12","",""],["第九課 窗邊的鳴聲","13","",""],["統整活動三","14","",""],["第十課 敏銳觀察","15","","第肆單元 平凡中的特別"],["第十一課 你一定會聽見的","16","",""],["第十二課 藍色的連身裙","17","",""],["統整活動四","18","",""],["享閱讀二 馬祖藍眼淚——夜空下的藍色精靈","19","",""],["第參、肆單元複習","20","",""]]],["數學",[["一、折線圖","1–2","",""],["二、倍數與因數","3–4","",""],["三、平面圖形","5–7","",""],["四、公倍數與公因數","8–9","",""],["五、立體形體","10–11","",""],["學習加油讚（一）","12","",""],["六、整數四則運算","13–14","",""],["七、擴、約分與加減","15–16","",""],["八、面積","17–18","",""],["九、乘以幾分之一","19","",""],["十、扇形","20","",""]]],["自然科學",[["一、太陽的祕密","1–5","","1 太陽與生活／2 太陽的位置變化／3 光的折射"],["二、千變萬化的植物","6–10","","1 不同環境的植物／2 植物存活的本事／3 植物繁衍大顯身手／4 植物的特徵與分類"],["三、奇妙的水溶液","11–16","","1 水溶液中的物質／2 水溶液的酸鹼性／3 水溶液的導電性"],["四、力與運動","17–21","","1 地球引力／2 力的測量／3 摩擦力"]]],["社會",[["一、臺灣的位置與先民足跡","1–5","","1 從地圖探索位置與發展有何關聯？／2 史前人們如何善用資源維持生活？／3 原住民族的文化與環境有何關聯？"],["二、臺灣登上國際舞臺","6–9","","1 臺灣為什麼在大航海時代崛起？／2 大航海時代在臺灣留下哪些影響？"],["三、成為清帝國的領土","10–14","","1 早期移民如何在臺灣建立家園？／2 開港通商為什麼改變了臺灣的發展？"],["四、土地的利用與變遷","15–18","","1 人們如何適應不同地形創造所需？／2 沿海的利用為什麼呈現多元發展？／3 土地開發與環境保護該如何抉擇？"],["五、製作小書看見臺灣","19–20","",""]]]],"下":[["國語",[["第一課 鵝鑾鼻詩","1","","第壹單元"],["第二課 山與海的交響樂——東海岸鐵道","2","",""],["第三課 我眼中的東方之最","3","",""],["統整活動一","4","",""],["第四課 滿修女採訪記","5","","第貳單元"],["第五課 誰該被派去非洲","6","",""],["第六課 幸福的味道","7","",""],["統整活動二","8","",""],["享閱讀一 廣受讚譽的健康照護制度","9","",""],["第壹、貳單元複習","10","",""],["第七課 生活有感——詩兩首","11","","第參單元"],["第八課 別把重點當全部","12","",""],["第九課 良言一句三冬暖","13","",""],["統整活動三","14","",""],["第十課 擅長推理的人","15","","第肆單元"],["第十一課 草船借箭","16","",""],["第十二課 三個問題","17","",""],["統整活動四","18","",""],["享閱讀二 我愛藍影子","19","",""],["第參、肆單元複習","20","",""]]],["數學",[["一、數的十進位結構","","",""],["二、分數的計算","","",""],["三、長方體與正方體的體積","","",""],["四、小數","","",""],["五、生活中的大單位","","",""],["六、時間的乘除","","",""],["七、容積","","",""],["八、比率與百分率","","",""],["九、表面積","","",""],["十、線對稱圖形","","",""]]],["自然科學",[["一、探索星空的奧祕","1–6","","1 星空神話／2 一起觀星星／3 夜裡辨認方位"],["二、空氣與燃燒","7–11","","1 氧氣與燃燒／2 二氧化碳與滅火／3 燃燒與滅火"],["三、防止生鏽與保存食物","12–16","","1 生鏽知多少／2 生活中的食物保存"],["四、揭祕動物的世界","17–21","","1 校園動物偵查員／2 動物的生存之道／3 動物的生命延續／4 動物與人類生活"]]],["社會",[["一、日本統治下的臺灣","1–5","","1 日本政府如何在臺灣建立統治？／2 日治時期的建設帶來哪些改變？／3 日治時期對臺灣社會有什麼影響？"],["二、生活中的文化展現","6–9","","1 臺灣為什麼有多元的米食文化？／2 建築如何反映文化與生活方式？"],["三、走向民主的中華民國","10–13","","1 中華民國政府為何在臺灣實施戒嚴？／2 臺灣為什麼能走向民主社會？"],["四、從臺灣探索世界文化","14–18","","1 如何發現在地與世界文化特色？／2 各族群生活方式如何形成文化？／3 世界宗教如何在臺灣傳播發展？"],["五、時空採訪員","19–20","",""]]]]},"nani":{"上":[["國語",[["第一課 幸福筆記本","1","","第壹單元 品格小學堂"],["第二課 做人做事做長久","2","",""],["第三課 孔雀錯了","3","",""],["語文天地一","4","",""],["讀寫練功房 故事三則","5","",""],["第四課 特別的海","6","","第貳單元 自然筆記"],["第五課 漫遊花東","7","",""],["第六課 護送螃蟹過馬路","8","",""],["語文天地二","9","",""],["第七課 高第的魔法建築","10","","第參單元 用心看世界"],["第八課 嘗嘗我的家鄉味","11","",""],["第九課 小小力量將世界照亮","12","",""],["語文天地三","13","",""],["讀寫練功房 極地逐光","14","",""],["第十課 男生說，女生說","15","","第肆單元 作家風華"],["第十一課 耶誕禮物","16","",""],["第十二課 漫遊詩情","17","",""],["語文天地四","18","",""],["閱讀充電站 島嶼原生種的揭密筆記","19","",""],["閱讀充電站 小兔彼得的誕生──波特小姐","20","",""]]],["數學",[["1 折線圖","1","",""],["2 因數和倍數","2–3","",""],["3 多邊形","4–5","",""],["4 擴分、約分和通分","5–6","",""],["5 線對稱圖形","7–8","",""],["加油小站一 Try數學","9","",""],["6 異分母分數的加減","10","",""],["7 整數四則計算","11–12","",""],["8 平行四邊形、三角形和梯形的面積","13–14","",""],["9 時間的乘除","15–16","",""],["10 正方體和長方體","17–18","",""],["加油小站二 Try數學","19","",""],["數學探索 密數脫逃","20","",""]]],["自然科學",[["一、太陽與光","1–4","","1 太陽在天空中的位置變化／2 認識光的現象與特性"],["二、植物世界","5–9","","1 植物根莖葉的功能／2 植物的繁殖／3 植物與人類生活"],["三、水溶液","10–15","","1 溶解現象／2 水溶液的酸鹼性／3 水溶液的導電性"],["四、力與運動","16–20","","1 力的測量／2 摩擦力／3 運動狀態的快慢"]]],["社會",[["一、臺灣！我來了","1–6","","1 鳥瞰臺灣／2 海中誕生的家園／3 當人類來到臺灣／探究實作"],["二、島嶼上的生活樣貌","7–10","","1 島嶼上的子民／2 島上居民的生活／探究實作"],["三、臺灣的物產資源","11–14","","1 豐饒的土地／2 山中的故事／探究實作"],["四、看見福爾摩沙","15–18","","1 潟湖上的海上貿易／2 大航海時期來臺的人們／3 大航海時期對臺的影響／探究實作"],["〔探究〕發現臺灣之美","19–20","",""]]]],"下":[["國語",[["第一課 穿越時空的味道","1–2","","第壹單元 感受生活"],["第二課 在黑暗中乘著音樂飛翔","3","",""],["第三課 色香味的陽光","4","",""],["語文天地一","5","",""],["讀寫練功房一 打赤腳","6","",""],["第四課 縣官審石頭","7","","第貳單元 智慧之鑰"],["第五課 高明說話術","8","",""],["第六課 讀書報告──佐賀的超級阿嬤","9","",""],["語文天地二","10","",""],["第七課 魔術師爸爸","11","","第參單元 愛的協奏曲"],["第八課 八歲，一個人去旅行","12","",""],["第九課 紅鼻子醫生","13","",""],["語文天地三","14","",""],["讀寫練功房二 飛翔的雲雀","15","",""],["第十課 沉默的動物園","16","","第肆單元 文明時光機"],["第十一課 地下護衛軍","17","",""],["第十二課 金字塔之謎","18","",""],["語文天地四","19","",""],["閱讀充電站 伯樂老師的一堂課、故宮奇幻之夜","20","",""]]],["數學",[["1 分數的計算","1–3","",""],["2 數的十進位結構","4–5","",""],["3 小數的乘法","6–7","",""],["4 扇形","7–8","",""],["5 體積","9","",""],["加油小站一 Try數學","10","",""],["6 整數、小數除以整數","11–12","",""],["7 生活中的大單位","12–13","",""],["8 比率和百分率","14–15","",""],["9 容積和容量","15–16","",""],["10 柱體、錐體和球體","17–18","",""],["加油小站二 Try數學","19","",""],["數學探索 密數脫逃","20","",""]]],["自然科學",[["一、星星的世界","1–5","","1 認識星空／2 觀測星空／3 星星的移動"],["二、認識燃燒與生鏽","6–10","","1 空氣與燃燒的關係／2 氧氣和二氧化碳的特性／3 空氣與生鏽的關係"],["三、動物的生活","11–15","","1 動物的身體構造和運動／2 動物求生存的方式／3 動物延續生命的方式"],["四、聲音與樂器","16–20","","1 認識聲音三要素／2 噪音與防治"]]],["社會",[["一、唐山到臺灣","1–6","","1 移民與自然環境的關係／2 漢人移墾社會的形成／3 清帝國時期的臺灣社會／探究實作"],["二、開港通商後的臺灣","7–10","","1 開港通商／2 臺灣地位的改變／探究實作"],["三、臺灣電力的發展","11–13","","1 當島嶼遇見電／2 電力發展的挑戰／探究實作"],["四、經濟與生活","14–18","","1 日常的經濟活動／2 理財大小事／3 環保經濟／探究實作"],["〔探究〕打造永續的家園","19–20","",""]]]]}};
+
+function mkUnit(name,status="todo",week="",periods="",fields){
+  const checks=DEFAULT_CHECKS.map(t=>({id:uid(),t,done:status==="done"}));
+  return {id:uid(),name,status,week,periods,checks,fields:fields||[]};
+}
+function subjectsFor(g){
+  if(g<=2)return ["國語","數學","生活"];
+  if(g<=6)return ["國語","數學","自然科學","社會","英語"];
+  return ["國文","英語","數學","自然科學","社會"];
+}
+const CN=["一","二","三","四","五","六","七","八"];
+function placeholder(name,n){return {id:uid(),name,grade:"",units:Array.from({length:n},(_,i)=>mkUnit(`第${CN[i]}單元`))}}
+function englishPlaceholder(){return {id:uid(),name:"英語",grade:"",units:["Unit 1","Unit 2","Review 1","Unit 3","Unit 4","Review 2"].map(n=>mkUnit(n,"todo","","",[{id:uid(),k:"備註",v:"英語教材各校選用不一，請依實際課本修改"}]))}}
+// 五年級英語（康軒 Wonder World、翰林版），整理自 115 學年度課程計畫
+const ENG5={
+ kangxuan:{"上":[["Get Ready","1","","字母拼讀、數字"],["Unit 1 The Best Drink","2–4","","飲料"],["Unit 2 Let's Make Fruit Salad","5–8","","水果"],["Review 1","9–10"],["Unit 3 A Fun Day","11–14","","星期"],["Unit 4 My Favorite Subject","15–18","","科目"],["Review 2","19"],["Culture & Festivals: Chinese New Year","20–21","","中國新年"]],
+   "下":[["Get Ready","1","","數字"],["Unit 1 A Surprise for Jello","2–5","","社區場所"],["Unit 2 City Adventure","6–9","","交通工具"],["Review 1／Culture & Festivals: Earth Day","10","","地球日"],["Unit 3 Clothes Shopping for a Wedding","11–14","","衣物"],["Unit 4 School Trip","15–18","","所有物"],["Review 2","19–21"]]},
+ hanlin:{"上":[["Starter","1–2","","World Map、Phonics Review、Word & Sentence Review"],["Unit 1 What Day Is Today?","3–6"],["Unit 2 Do You Have PE Class on Monday?","7–10"],["Review 1 & Exam 1","11","","複習一＆期中評量"],["Unit 3 Where Are You Going?","12–15"],["Unit 4 How Many Koalas Are There?","16–19","","含 Festival：Christmas（耶誕節）"],["Review 2 & Exam 2","20","","複習二＆期末評量，含 Let's Explore、Country Profile、Comics、Look and Say"]],
+   "下":[["Starter","1"],["Unit 1 What's Wrong?","2–5","","Body Parts"],["Unit 2 Do You Have a Headache?","6–9","","Illness"],["Review 1 & Exam 1","10","","複習一＆期中評量"],["Unit 3 What Would You Like for Dinner?","11–14","","Meals & Food"],["Unit 4 Whose Backpack Is That?","15–18","","含 The Dragon Boat Festival（端午節）"],["Review 2 & Exam 2","19","","複習二＆期末評量"],["Let's Explore、Comics、Look and Say、Country Profile","20"]]}
+};
+const GDATA=Object.assign({5:G5},{"1":{"nani":{"上":[["數學",[["1 數到10","1–2","",""],["2 比長短","3","",""],["3 分與合","4–6","",""],["4 順序和多少","7","",""],["5 數到30","8–9","",""],["加油小站一","10","",""],["6 加一加","11–12","",""],["7 認識形狀","13–14","",""],["8 減一減與加減應用","15–17","",""],["9 讀鐘錶","18–19","",""],["加油小站二","20","",""]]],["生活",[["主題一 我上一年級了","1–4","","上學了／學校的一天"],["主題二 認識校園","5–7","","校園哪裡最好玩／一起探索校園"],["主題三 哇！好想吃","8–10","","午餐大探索／午餐家家酒"],["主題四 一起來閱讀","11–13","","不同課本比一比／我愛圖書館"],["主題五 聲音好好玩","14–16","","聲音哪裡來／一起玩聲音"],["主題六 新的一年","17–20","","迎接新的一年／除夕團圓夜／過新年了"]]],["國語",[["首冊 第一課 踢踏踢","1","","首冊第壹單元 幸福甜蜜蜜"],["第二課 木馬","2","","首冊第壹單元 幸福甜蜜蜜"],["第三課 晚安","3","","首冊第壹單元 幸福甜蜜蜜"],["統整活動一","3","","首冊第壹單元 幸福甜蜜蜜"],["第四課 紙飛機","4","","首冊第貳單元 快樂手牽手"],["第五課 好漂亮","5","","首冊第貳單元 快樂手牽手"],["第六課 剪刀石頭布","6","","首冊第貳單元 快樂手牽手"],["統整活動二","6","","首冊第貳單元 快樂手牽手"],["第七課 不來梅樂隊","7","","首冊第參單元 夢想故事屋"],["第八課 小蝌蚪找媽媽","8","","首冊第參單元 夢想故事屋"],["第九課 動物狂歡節","9","","首冊第參單元 夢想故事屋"],["統整活動三","9","","首冊第參單元 夢想故事屋"],["首冊總複習","10","","首冊第參單元 夢想故事屋"],["數字遊戲＋魔法文字","11","","首冊第參單元 夢想故事屋"],["第一課 小船","12","","第壹單元 一起玩遊戲"],["第二課 印手印","13","","第壹單元 一起玩遊戲"],["第三課 吹泡泡","14","","第壹單元 一起玩遊戲"],["語文天地一","15","","第壹單元 一起玩遊戲"],["第四課 你好","16","","第貳單元 快樂的生活"],["第五課 外星人","17","","第貳單元 快樂的生活"],["第六課 小金魚","18","","第貳單元 快樂的生活"],["第七課 紅紅的春","19","","第貳單元 快樂的生活"],["語文天地二","20","","第貳單元 快樂的生活"],["總複習","21","","第貳單元 快樂的生活"]]]],"下":[["數學",[["1 數到100","1–3","",""],["2 18以內的加法","4–5","",""],["3 長度","6","",""],["4 18以內的減法","7–8","",""],["5 圖形和形體","8–9","",""],["加油小站一","10","",""],["6 幾月幾日","11–12","",""],["7 錢幣","13–14","",""],["8 二位數的加減","15–17","",""],["9 做紀錄","18–19","",""],["加油小站二","20","",""]]],["生活",[["主題一 訊息的傳達","1–5","","分享寒假生活／訊息在哪裡／讓我告訴你"],["主題二 美麗的春天","5–7","","發現春天／在春天裡玩"],["主題三 玩具總動員","8–10","","什麼最好玩／玩具同樂會"],["主題四 有電話真方便","11–13","","怎麼說比較好／電話好幫手／愛的傳聲筒"],["主題五 夏天與端午","14–17","","天氣變熱了／夏天的活動／熱鬧的端午節"],["主題六 雨和水","18–20","","天上來的水／雨後積水大清掃"]]],["國語",[["第一課 太陽是充電機","1","","第壹單元 大自然教室"],["第二課 春雨是什麼顏色","2","","第壹單元 大自然教室"],["第三課 山中音樂會","3","","第壹單元 大自然教室"],["語文天地一","4","","第壹單元 大自然教室"],["閱讀列車 雷公公愛拍照","5","","第壹單元 大自然教室"],["第四課 書是我的好朋友","6","","第貳單元 我們一起玩"],["第五課 風喜歡和我玩","7","","第貳單元 我們一起玩"],["第六課 鄰居的小孩","8","","第貳單元 我們一起玩"],["語文天地二","9","","第貳單元 我們一起玩"],["閱讀列車 長頸鹿的新衣","10","","第貳單元 我們一起玩"],["第七課 畫畫","11","","第參單元 有你真好"],["第八課 給松鼠的卡片","12","","第參單元 有你真好"],["第九課 張奶奶的寶貝","13","","第參單元 有你真好"],["語文天地三","14","","第參單元 有你真好"],["閱讀列車 樂樂怎麼還沒來","15","","第參單元 有你真好"],["第十課 井裡的小青蛙","16","","第肆單元 動物同樂會"],["第十一課 吃星星的小鴨子","17","","第肆單元 動物同樂會"],["第十二課 快樂不止一半","18","","第肆單元 動物同樂會"],["語文天地四","19","","第肆單元 動物同樂會"],["閱讀列車 火雞與孔雀","20","","第肆單元 動物同樂會"],["總複習","21","","第肆單元 動物同樂會"]]]]},"kangxuan":{"上":[["數學",[["第一單元 10以內的數","1–2","",""],["第二單元 比長短","3–4","",""],["第三單元 排順序、比多少","5–6","",""],["第四單元 分與合","7–8","",""],["第五單元 方盒、圓罐、球","9–10","",""],["第六單元 30以內的數","11–13","",""],["第七單元 10以內的加法","14–15","",""],["第八單元 10以內的減法","16–18","",""],["第九單元 幾點鐘","19–20","",""]]],["國語",[["第一課 貓咪","1","","第一單元 米米的好朋友(首冊)"],["第二課 鵝寶寶","2","","第一單元 米米的好朋友(首冊)"],["第三課 河馬和河狸","3","","第一單元 米米的好朋友(首冊)"],["第四課 笑嘻嘻","4","","第二單元 上學真有趣"],["第五課 翹翹板","5","","第二單元 上學真有趣"],["第六課 謝謝老師","6","","第二單元 上學真有趣"],["第七課 龜兔賽跑","7","","第三單元 神奇故事樹"],["第八課 拔蘿蔔","8","","第三單元 神奇故事樹"],["第九課 動物狂歡會","9","","第三單元 神奇故事樹"],["國字真簡單","10","","第三單元 神奇故事樹"],["第一課 拍拍手","11","","第一單元 來！一起玩遊戲"],["第二課 這是誰的","12–13","","第一單元 來！一起玩遊戲"],["第三課 秋千","14","","第一單元 來！一起玩遊戲"],["第四課 大個子，小個子","15","","第二單元 看！我的新發現"],["第五課 比一比","16–17","","第二單元 看！我的新發現"],["第六課 小路","18","","第二單元 看！我的新發現"],["寫字123","19","","第二單元 看！我的新發現"],["閱讀階梯 擁抱","20–21","","第二單元 看！我的新發現"]]],["生活",[["第一主題 我上一年級","1–4","","開學了／認識新同學／學校的一天"],["第二主題 走，校園探索去","5–7","","校園大探索／校園安全小達人"],["第三主題 一起來玩吧","8–10","","快來玩吧／有趣的新玩法"],["第四主題 風兒吹過來","11–14","","風在哪裡／風會做什麼／和風一起玩"],["第五主題 聽！那是什麼聲音","15–17","","聲音的訊息／好聽的聲音／聲音大合奏"],["第六主題 過年囉","18–21","","熱鬧迎新年／團圓除夕夜／快樂新年到"]]]],"下":[["數學",[["第一單元 50以內的數","1–2","",""],["第二單元 18以內的加法","3–4","",""],["第三單元 圖形與分類","5–6","",""],["第四單元 18以內的減法","7–8","",""],["第五單元 有多長","9–10","",""],["第六單元 100以內的數","11–12","",""],["第七單元 認識錢幣","13–14","",""],["第八單元 二位數的加減","15–17","",""],["第九單元 幾月幾日星期幾","18–20","",""]]],["國語",[["第一課 看","1–2","","第一單元 生活放大鏡"],["第二課 花園裡有什麼？","3","","第一單元 生活放大鏡"],["第三課 媽媽的音樂會","4–5","","第一單元 生活放大鏡"],["第四課 鞋","6","","第二單元 甜蜜的家"],["第五課 小種子快長大","7–8","","第二單元 甜蜜的家"],["第六課 奶奶的小跟班","9–10","","第二單元 甜蜜的家"],["第七課 作夢的雲","11","","第三單元 小水滴的旅行"],["第八課 妹妹的紅雨鞋","12–13","","第三單元 小水滴的旅行"],["第九課 七彩的虹","14","","第三單元 小水滴的旅行"],["第十課 和你在一起","15","","第四單元 好朋友"],["第十一課 生日快樂","16–17","","第四單元 好朋友"],["第十二課 小黑","18","","第四單元 好朋友"],["寫字123","19","","第四單元 好朋友"],["閱讀階梯 小小鼠的快樂","20–21","","第四單元 好朋友"]]],["生活",[["第一主題 更好的自己","1–3","","肯定自己／讓自己更好"],["第二主題 大樹小花我愛你","4–7","","大樹小花點點名／大樹小花的訪客／護樹護花小尖兵"],["第三主題 和書做朋友","8–10","","我的書朋友／愛上圖書館"],["第四主題 玩具同樂會","11–14","","我們的玩具／動手做玩具／超級大玩家"],["第五主題 五月五慶端午","15–18","","粽葉飄香慶端午／健康過一「夏」"],["第六主題 生活中的水","19–21","","親水趣／珍惜水"]]]]},"hanlin":{"上":[["數學",[["一、10以內的數","1–2","",""],["二、比長短","3–4","",""],["三、順序與多少","5–6","",""],["四、分與合","7–8","",""],["五、認識形狀","9–10","",""],["學習加油讚（一）","11","",""],["六、10以內的加法","12–13","",""],["七、10以內的減法","14–16","",""],["八、30以內的數","17–18","",""],["九、時間","19–20","",""],["學習加油讚（二）","21","",""]]],["國語",[["首冊 第一課 手拉手","1","","首冊"],["第二課 排一排","2","","首冊"],["第三課 來數數","3","","首冊"],["第四課 找一找","4","","首冊"],["統整活動一","4","","首冊"],["第五課 雨來了","5","","首冊第貳單元"],["第六課 山坡上的學校","6","","首冊第貳單元"],["第七課 值日生","7","","首冊第貳單元"],["第八課 運動會","8","","首冊第貳單元"],["第九課 做卡片","9","","首冊第貳單元"],["統整活動二","9","","首冊第貳單元"],["來閱讀 紙飛機","10","","首冊第貳單元"],["第一課 一起走","11","","第一冊第壹單元"],["第二課 大風吹","12","","第一冊第壹單元"],["第三課 火車過山洞","13","","第一冊第壹單元"],["統整活動一","14","","第一冊第壹單元"],["第四課 請問","15","","第一冊第貳單元"],["第五課 七彩的滑梯","16","","第一冊第貳單元"],["第六課 秋千","17","","第一冊第貳單元"],["第七課 回音","18","","第一冊第貳單元"],["統整活動二","19","","第一冊第貳單元"],["來閱讀 妹妹寫的字","20","","第一冊第貳單元"]]],["生活",[["一、我上一年級了","1–3","",""],["二、我的新學校","4–6","",""],["三、大樹高小花香","7–9","",""],["四、聲音的世界","10–13","",""],["五、玩具總動員","14–17","",""],["六、新年快樂","18–20","",""]]]],"下":[["數學",[["一、20以內的加法","1–3","",""],["二、長度","4–5","",""],["三、20以內的減法","6–7","",""],["四、100以內的數","8–9","",""],["五、形狀與形體","10–11","",""],["學習加油讚（一）","12","",""],["六、數數看有多少元","13–14","",""],["七、幾月幾日星期幾","15–16","",""],["八、兩位數的加減法","17–19","",""],["九、分類整理","20–21","",""]]],["國語",[["第一課 春天來了","1","","第壹單元"],["第二課 小雨","2","","第壹單元"],["第三課 美好的一天","3","","第壹單元"],["統整活動一","4","","第壹單元"],["第四課 送什麼呢","5","","第貳單元"],["第五課 窗外的小麻雀","6","","第貳單元"],["第六課 毛毛蟲過河","7","","第貳單元"],["統整活動二","8","","第貳單元"],["來閱讀 魯班造傘","9","","第貳單元"],["總複習","10","","第貳單元"],["第七課 借筆","11","","第參單元"],["第八課 兩張卡片","12","","第參單元"],["第九課 友情的枴杖","13","","第參單元"],["統整活動三","14","","第參單元"],["第十課 一棵小樹","15","","第肆單元"],["第十一課 鉛筆和橡皮擦","16","","第肆單元"],["第十二課 上臺說故事","17","","第肆單元"],["統整活動四","18","","第肆單元"],["來閱讀 山頂","19","","第肆單元"],["總複習","20","","第肆單元"]]],["生活",[["一、電話好幫手","1–3","",""],["二、美麗的春天","4–6","",""],["三、我愛看書","7–9","",""],["四、我愛我的家","10–12","",""],["五、奇妙的水","13–16","",""],["六、快樂一夏","17–20","",""]]]]}},"2":{"hanlin":{"上":[["數學",[["一、200以內的數","1–2","",""],["二、二位數的加減法","3–4","",""],["三、認識公分","5–6","",""],["四、加減應用","7–8","",""],["五、容量","9","",""],["學習加油讚（一）","10","",""],["六、加減兩步驟","11–12","",""],["七、乘法（一）","13–14","",""],["八、時間","15–16","",""],["九、乘法（二）","17–18","",""],["十、面的大小比較","19","",""],["學習加油讚（二）","20","",""]]],["國語",[["第一課 我的心情","1","","壹單元 心情萬花筒"],["第二課 彩色的天空","2","","壹單元 心情萬花筒"],["第三課 國王做新衣","3","","壹單元 心情萬花筒"],["統整活動一","4","","壹單元 心情萬花筒"],["第四課 水草下的呱呱","5","","貳單元 觀察樂趣多"],["第五課 沙灘上的畫","6","","貳單元 觀察樂趣多"],["第六課 草叢裡的星星","7","","貳單元 觀察樂趣多"],["統整活動二","8","","貳單元 觀察樂趣多"],["來閱讀一 小蜻蜓低低飛","9","","貳單元 觀察樂趣多"],["壹、貳單元複習","10","","貳單元 觀察樂趣多"],["第七課 不一樣的美食","11","","參單元 美食點點名"],["第八課 美食分享日","12","","參單元 美食點點名"],["第九課 好味道","13","","參單元 美食點點名"],["統整活動三","14","","參單元 美食點點名"],["第十課 加加減減","15","","肆單元 語文真有趣"],["第十一課 奇怪的門","16","","肆單元 語文真有趣"],["第十二課 詠鵝","17","","肆單元 語文真有趣"],["統整活動四","18","","肆單元 語文真有趣"],["來閱讀二 不簡單的字","19","","肆單元 語文真有趣"],["參、肆單元複習","20","","肆單元 語文真有趣"]]],["生活",[["一、動物好朋友","1–4","","親近動物／我愛動物"],["二、和風做朋友","5–8","","風來了／風的同樂會"],["三、泡泡真有趣","9–11","","神奇的泡泡／泡泡派對"],["四、學校附近","12–15","","認識學校附近／我的發現與分享"],["五、美麗的色彩","16–18","","一起找色彩／開心玩色彩"],["六、溫暖過冬天","19–20","","冬天來了／散播溫暖散播愛"]]]],"下":[["數學",[["一、1000以內的數","1–3","",""],["二、重量","4–5","",""],["三、加加減減","6–7","",""],["四、平面圖形與立體形體","8","",""],["五、乘法","9–10","",""],["學習加油讚（一）","11","",""],["六、公尺與公分","12–13","",""],["七、乘與加減兩步驟","14–15","",""],["八、年、月、日","16","",""],["九、分裝與平分","17–18","",""],["十、認識分數","19–20","",""],["學習加油讚（二）","21","",""]]],["國語",[["第一課 種子旅行真奇妙","1","","壹單元 出去走一走"],["第二課 第一次旅行","2","","壹單元 出去走一走"],["第三課 不怕去探險","3","","壹單元 出去走一走"],["統整活動一","4","","壹單元 出去走一走"],["第四課 一場雨","5","","貳單元 怎麼做才好"],["第五課 笑容回來了","6","","貳單元 怎麼做才好"],["第六課 好好的說話","7","","貳單元 怎麼做才好"],["統整活動二","8","","貳單元 怎麼做才好"],["來閱讀一 大家來抱抱","9","","貳單元 怎麼做才好"],["壹、貳單元複習","10","","貳單元 怎麼做才好"],["第七課 孵蛋的男孩","11","","參單元 好奇動手做"],["第八課 點亮世界的人","12","","參單元 好奇動手做"],["第九課 色彩變變變","13","","參單元 好奇動手做"],["統整活動三","14","","參單元 好奇動手做"],["第十課 醜小鴨","15","","肆單元 故事有意思"],["第十一課 蜘蛛救蛋","16","","肆單元 故事有意思"],["第十二課 玉兔搗藥","17","","肆單元 故事有意思"],["統整活動四","18","","肆單元 故事有意思"],["來閱讀二 三隻小豬","19","","肆單元 故事有意思"],["參、肆單元複習","20","","肆單元 故事有意思"]]],["生活",[["一、減塑大作戰","1–3","","塑膠垃圾／減塑小達人"],["二、奇妙的種子","4–6","","種子的祕密／發芽長大了"],["三、米食好好吃","7–9","","米食大集合／食在感謝"],["四、下雨了","10–12","","雨天的情景／雨天同樂會"],["五、影子變變變","13–16","","影子遊戲／影子真好玩"],["六、升上三年級","17–20","","成長的喜悅／迎接三年級"]]]]},"kangxuan":{"上":[["數學",[["第一單元 200以內的數","1–2","",""],["第二單元 二位數的直式加減","3–5","",""],["第三單元 量長度","6–7","",""],["第四單元 加減關係與應用","8–9","",""],["第五單元 面積的大小比較","10","",""],["第六單元 兩步驟的加減","11–12","",""],["第七單元 2、5、4、8的乘法","13–15","",""],["第八單元 幾時幾分","16–17","",""],["第九單元 3、6、9、7的乘法","18–19","",""],["第十單元 容量與重量","20–21","",""]]],["國語",[["查字典真簡單","1","",""],["第一課 新學年新希望","1–2","","第一單元 生活新鮮事"],["第二課 一起做早餐","3–4","","第一單元 生活新鮮事"],["第三課 走過小巷","5","","第一單元 生活新鮮事"],["第四課 運動會","6–7","","第二單元 歡樂的時刻"],["第五課 坐竹籃船","8","","第二單元 歡樂的時刻"],["第六課 小鎮的柿餅節","9–10","","第二單元 歡樂的時刻"],["第七課 國王的新衣裳","11","","第三單元 故事萬花筒"],["第八課 「聰明」的小熊","12–13","","第三單元 故事萬花筒"],["第九課 大象有多重？","14","","第三單元 故事萬花筒"],["第十課 新年快樂","15–16","","第四單元 冬天的悄悄話"],["第十一課 遠方來的黑皮","17","","第四單元 冬天的悄悄話"],["第十二課 我愛冬天","18–19","","第四單元 冬天的悄悄話"],["閱讀階梯 我最喜歡上學了","20–21","","第四單元 冬天的悄悄話"]]],["生活",[["第一主題 防震小達人","1–3","","地震來了不慌張／地震應變有方法／防震大使Go！Go！Go！"],["第二主題 光影好好玩","4–7","","光和影／光影魔法師／光影小故事"],["第三主題 玩泡泡","8–10","","泡泡在哪裡／泡泡變變變"],["第四主題 學校附近","11–14","","學校附近有什麼／分享學校附近的故事"],["第五主題 歲末傳溫情","15–18","","溫馨送暖／傳送我的愛"],["第六主題 米粒魔術師","19–21","","五花八門的米食／珍惜食物"]]]],"下":[["數學",[["第一單元 1000以內的數","1–2","",""],["第二單元 三位數的加減","3–4","",""],["第三單元 平面圖形","5–6","",""],["第四單元 年、月、日","7–8","",""],["第五單元 乘法","9–10","",""],["第六單元 兩步驟應用問題","11–12","",""],["第七單元 公尺和公分","13–14","",""],["第八單元 分類與立體形體","15–16","",""],["第九單元 分分看","17–18","",""],["第十單元 分數","19–20","",""],["生活中的數學","21","",""]]],["國語",[["第一課 春天的顏色","1–2","","第一單元 彩色的世界"],["第二課 花衣裳","3","","第一單元 彩色的世界"],["第三課 彩色王國","4","","第一單元 彩色的世界"],["第四課 爸爸","5–6","","第二單元 有你真好"],["第五課 我的家人","7","","第二單元 有你真好"],["第六課 愛笑的大樹","8–9","","第二單元 有你真好"],["第七課 月光河","10–11","","第三單元 故事妙妙屋"],["第八課 黃狗生蛋","12","","第三單元 故事妙妙屋"],["第九課 神筆馬良","13","","第三單元 故事妙妙屋"],["第十課 小熊的邀請","14–15","","第四單元 閱讀樂趣多"],["第十一課 小讀者樂園","16","","第四單元 閱讀樂趣多"],["第十二課 巨人山","17–18","","第四單元 閱讀樂趣多"],["閱讀階梯 江奶奶的雜貨店","19–21","","第四單元 閱讀樂趣多"]]],["生活",[["第一主題 減塑行動家","1–4","","塑膠垃圾好可怕／我的減塑行動"],["第二主題 奇妙的種子","5–7","","種子藏哪裡／種子大發現"],["第三主題 彩色的世界","8–10","","色彩大發現／色彩會說話／色彩大集合"],["第四主題 有您真好","11–14","","我和家人能溝通／感謝家人我愛您"],["第五主題 磁鐵真好玩","15–18","","磁鐵妙用多／磁鐵找朋友／磁鐵小創客"],["第六主題 我的成長故事","19–21","","快樂的學習／迎向三年級"]]]]},"nani":{"上":[["數學",[["1 數到300","1–2","",""],["2 二位數的加減","3–4","",""],["3 幾公分","5–6","",""],["4 加減的關係與應用","7–8","",""],["5 容量","9","",""],["加油小站一","10","",""],["6 兩步驟的加減","11–12","",""],["7 2、5、4、8的乘法","13–14","",""],["8 幾時幾分","15–16","",""],["9 3、6、7、9的乘法","17–18","",""],["10 平面圖形","19","",""],["加油小站二","20–21","",""]]],["國語",[["第一課 打招呼","2","","第壹單元 我長大了"],["第二課 爬梯子","3","","第壹單元 我長大了"],["第三課 勇氣樹","4","","第壹單元 我長大了"],["語文天地一","5","","第壹單元 我長大了"],["第四課 一天的時間","7","","第貳單元 生活小點滴"],["第五課 小書蟲","8","","第貳單元 生活小點滴"],["第六課 從自己開始","9","","第貳單元 生活小點滴"],["語文天地二","10","","第貳單元 生活小點滴"],["第七課 等兔子來撞樹","12","","第參單元 故事夢工廠"],["第八課 角和腳","13","","第參單元 故事夢工廠"],["第九課 赤腳國王","14","","第參單元 故事夢工廠"],["語文天地三","15","","第參單元 故事夢工廠"],["第十課 去農場玩","17","","第肆單元 美好的時光"],["第十一課 幸福湯圓","18","","第肆單元 美好的時光"],["第十二課 到野外上課","19","","第肆單元 美好的時光"],["語文天地四","20–21","","第肆單元 美好的時光"]]],["生活",[["主題一 標誌與生活","1–3","","生活中的標誌／標誌的妙用"],["主題二 吸住了","4–6","","什麼吸得住／吸住了真有用"],["主題三 我愛泡泡","7–10","","泡泡怎麼來／大家來吹泡泡／美麗的泡泡"],["主題四 大樹","11–14","","認識樹朋友／親近樹朋友／愛護樹朋友"],["主題五 和風做朋友","15–17","","風兒在哪裡／風兒真奇妙／和風一起玩"],["主題六 冬天","18–20","","冷冷的天氣／預防天冷好方法／冬天送溫暖"]]]],"下":[["數學",[["1 數到1000","1–2","",""],["2 加加減減","3–4","",""],["3 幾公尺","5–6","",""],["4 年月日","7","",""],["5 0、1、10的乘法","8–9","",""],["加油小站一","10","",""],["6 重量","11–12","",""],["7 兩步驟的計算","13–14","",""],["8 分東西","15–16","",""],["9 單位分數","17","",""],["10 面的大小與立體","18","",""],["加油小站二","19–20","",""],["數學探索","21","",""]]],["國語",[["第一課 彩色心情","2","","第壹單元 心情溫度計"],["第二課 勇敢超人","3","","第壹單元 心情溫度計"],["第三課 小波氣球飛上天","4","","第壹單元 心情溫度計"],["語文天地一","5","","第壹單元 心情溫度計"],["第四課 小水珠，去哪裡","7","","第貳單元 特別的禮物"],["第五課 生日快樂","8","","第貳單元 特別的禮物"],["第六課 給地球的一封信","9","","第貳單元 特別的禮物"],["語文天地二","10","","第貳單元 特別的禮物"],["第七課 傘","12","","第參單元 語文百寶箱"],["第八課 老園丁的話","13","","第參單元 語文百寶箱"],["第九課 小小說書人","14","","第參單元 語文百寶箱"],["語文天地三","15","","第參單元 語文百寶箱"],["第十課 點金術","17","","第肆單元 我喜歡"],["第十一課 我喜歡你","18","","第肆單元 我喜歡"],["第十二課 如果，我的房間……","19","","第肆單元 我喜歡"],["語文天地四","20–21","","第肆單元 我喜歡"]]],["生活",[["主題一 有你真好","1–3","","謝謝你的幫忙／校園生活中幫助我們的人"],["主題二 小種子長大了","4–6","","種子在哪裡／一起來種吧！／種子發芽了"],["主題三 美麗的彩色世界","7–8","","一起找顏色／色彩真奇妙"],["主題四 環保達人","9–13","","大掃除時間／垃圾減量大作戰／神奇變身術"],["主題五 光和影","14–16","","和影子玩遊戲／光影好朋友／影子表演秀"],["主題六 成長與學習","17–20","","成長的發現／迎接新生活"]]]]}},"3":{"kangxuan":{"上":[["數學",[["第一單元 10000以內的數","1–2","",""],["第二單元 四位數的加減","3–5","",""],["第三單元 毫米","6–7","",""],["第四單元 乘法","8–9","",""],["第五單元 角","10–11","",""],["第六單元 面積","12–13","",""],["第七單元 除法","14–16","",""],["第八單元 公升和毫升","17–18","",""],["第九單元 分數","19–21","",""]]],["國語",[["第一課 心的悄悄話","1–2","","第一單元 語文萬花筒"],["第二課 妙故事點點名","3–4","","第一單元 語文萬花筒"],["第三課 繞口令村","4–5","","第一單元 語文萬花筒"],["學習地圖一","5–6","","第一單元 語文萬花筒"],["第四課 小丑魚和海葵","6–7","","第二單元 處處有真情"],["第五課 飛舞的絲帶","8–9","","第二單元 處處有真情"],["第六課 小女生","9–10","","第二單元 處處有真情"],["學習地圖二","10–11","","第二單元 處處有真情"],["閱讀階梯一 丸子與我","11","","第二單元 處處有真情"],["第七課 淡水小鎮","12–13","","第三單元 臺灣風情"],["第八課 安平古堡參觀記","13–14","","第三單元 臺灣風情"],["第九課 馬太鞍的巴拉告","14–15","","第三單元 臺灣風情"],["學習地圖三","15–16","","第三單元 臺灣風情"],["第十課 狐狸的故事","16–17","","第四單元 閱讀瞭望臺"],["第十一課 巨人的花園","17–18","","第四單元 閱讀瞭望臺"],["第十二課 奇特的朋友","19–20","","第四單元 閱讀瞭望臺"],["學習地圖四","20","","第四單元 閱讀瞭望臺"]]],["自然科學",[["一、多采多姿的植物","1–5","","活動一 植物是什麼／活動二 植物如何獲取陽光和水／活動三 花、果實和種子有什麼功能"],["二、生活中的力","6–10","","活動一 力的現象有哪些／活動二 磁力有什麼特性／活動三 還有什麼不一樣的力"],["三、奇妙的空氣","11–14","","活動一 空氣在哪裡／活動二 空氣還有什麼特性／活動三 乾淨空氣重要嗎"],["四、廚房裡的科學","15–21","","活動一 如何辨認廚房中的材料／活動二 如何增加物質溶解的量／活動三 怎麼辨認水溶液的酸鹼"]]],["社會",[["第一單元 我的家庭","1–6","","家庭的組成／家庭的功能／親人的往來"],["第二單元 學習與成長","7–10","","學習的方法／多元的學習"],["第三單元 班級與我","11–13","","班級裡的人際關係／班級的自治活動"],["第四單元 學校與我","14–20","","合作與競爭／平等與尊重／學校是個小社會"],["主題探究與實作 讓班級更美好","21","",""]]],["英語",[["Get Ready","1","","字母、數字"],["Unit 1 The Birthday Party","2–4","","年齡"],["Unit 2 Poor Kevin","5–8","","情緒與感覺"],["Review 1","9–10","",""],["Unit 3 At B&J's Toys","11–14","","常見玩具"],["Unit 4 Baby Dragon's Toys","15–18","","顏色（第16週 Merry Christmas!）"],["Review 2","19–21","",""]]]],"下":[["數學",[["第一單元 分數的加減","1–2","",""],["第二單元 除法","3–4","",""],["第三單元 尋找規律","5–6","",""],["第四單元 公斤和公克","7–9","",""],["第五單元 小數","10–11","",""],["第六單元 圓","12–13","",""],["第七單元 乘法與除法","14–15","",""],["第八單元 時間","16–18","",""],["第九單元 統計表","19–21","",""]]],["國語",[["第一課 許願","1","","第一單元 用心生活"],["第二課 下雨的時候","2–3","","第一單元 用心生活"],["第三課 遇見美如奶奶","3–4","","第一單元 用心生活"],["學習地圖一","5","","第一單元 用心生活"],["第四課 工匠之祖","5–6","","第二單元 創意無限"],["第五課 學田鼠開路","7–8","","第二單元 創意無限"],["第六課 神奇密碼","8–9","","第二單元 創意無限"],["學習地圖二","9–10","","第二單元 創意無限"],["閱讀階梯一 蘋果甜蜜蜜","10–11","","第二單元 創意無限"],["第七課 油桐花‧五月雪","11–12","","第三單元 探索大自然"],["第八課 大自然的美術館","12–13","","第三單元 探索大自然"],["第九課 臺灣的山椒魚","13–14","","第三單元 探索大自然"],["學習地圖三","15","","第三單元 探索大自然"],["第十課 漁夫和金魚","15–17","","第四單元 閱讀探照燈"],["第十一課 聰明的鼠鹿","17–18","","第四單元 閱讀探照燈"],["第十二課 還要跌幾次","18–19","","第四單元 閱讀探照燈"],["學習地圖四","19–20","","第四單元 閱讀探照燈"],["閱讀階梯二 故宮珍玩","20","","第四單元 閱讀探照燈"]]],["自然科學",[["一、田園樂","1–5","","活動一 蔬菜是從哪裡來的／活動二 哪些因素會影響蔬菜生長／活動三 蔬菜生長會經歷哪些變化"],["二、溫度變化對物質的影響","6–10","","活動一 什麼因素會影響物質變化／活動二 溫度改變對水有哪些變化／活動三 溫度改變對其他物質有什麼影響"],["三、我是動物解說員","11–14","","活動一 動物身體構造和功能有關嗎／活動二 動物身體構造和適應環境有關嗎／活動三 動物有什麼生存法寶"],["四、天氣變變變","15–21","","活動一 天氣對生活有何影響／活動二 如何觀測天氣／活動三 如何應用氣象資訊"]]],["社會",[["第一單元 我們居住的地方","1–6","","認識居住的地方／居住地方的生活／地方的居民活動"],["第二單元 消費與生活","7–10","","人人有消費／聰明的消費"],["第三單元 消費與選擇","11–13","","消費停看聽／消費改變生活"],["第四單元 家鄉的地名與故事","14–20","","地名的由來／探索家鄉地名／家鄉的故事"],["主題探究與實作 家鄉特派員","21","",""]]],["英語",[["Get Ready","1","","字母拼讀、數字"],["Unit 1 Funny Animals","2–5","","動物"],["Unit 2 Teamwork","6–9","","才能"],["Review 1","10","",""],["Unit 3 The Monster Parade","11–15","","家人（第13週 Mother's Day）"],["Unit 4 Jello's Family","16–19","","職業"],["Review 2","20–21","",""]]]]},"nani":{"上":[["數學",[["1 數到10000","1–2","",""],["2 四位數的加減","3–5","",""],["3 乘法","6–7","",""],["4 幾毫米","8–9","",""],["加油小站一","10","",""],["5 角、正方形和長方形","11–12","",""],["6 除法","13–14","",""],["7 公升和毫升","15–16","",""],["8 分數","17","",""],["9 圓","18–19","",""],["加油小站二、數學探索","20–21","",""]]],["國語",[["你好，新朋友","1","","快樂上學去"],["我們的約定","2","","快樂上學去"],["下課十分鐘","3","","快樂上學去"],["語文天地一","4","","快樂上學去"],["我最愛的一堂課","5","","快樂上學去"],["一顆黑點","6","","更好的自己"],["火大了","7","","更好的自己"],["我該怎麼辦？","8","","更好的自己"],["語文天地二","9","","更好的自己"],["最年輕的奶奶","10","","人物拍立得"],["魔「髮」哥哥","11","","人物拍立得"],["穿白袍的醫生伯伯","12","","人物拍立得"],["語文天地三","13","","人物拍立得"],["黑猩猩守護者","14","","人物拍立得"],["哎呀！誤會大了","15","","與動物有約"],["石虎的告白","16","","與動物有約"],["昆蟲的保命妙招","17","","與動物有約"],["語文天地四","18","","與動物有約"],["石頭湯","19","","與動物有約"],["你都讀什麼書呢？","20","","與動物有約"]]],["自然科學",[["一、認識植物","1–5","","植物與環境／植物的身體／植物與生活"],["二、空氣和水","6–10","","空氣和水的特性／空氣和水的壓縮與傳動／流動的空氣"],["三、認識動物","11–15","","動物的身體／動物的運動／動物與生活"],["四、磁鐵","16–20","","磁力的探討／磁鐵的特性／磁鐵與生活"]]],["社會",[["一、我的新學習","1–6","","1 多元的學習活動／2 主動學習／3 善用學習方法"],["二、學校生活","7–10","","1 校園與我／2 班級自治／玩探究 解決班級事務"],["三、我的家庭","11–14","","1 家庭與我／2 居家安全／玩探究 守護居家安全"],["四、與人共好","15–18","","1 與家人相處／2 與同學相處／3 和諧的人際關係"],["〔探究〕我可以學更多","19–20","","圖書館尋寶／問問題、找答案"]]]],"下":[["數學",[["1 除法","1–2","",""],["2 找規律","3–4","",""],["3 時間","5–6","",""],["4 兩步驟的計算","7–8","",""],["5 面積","8–9","",""],["加油小站一","10","",""],["6 公斤和公克","11–12","",""],["7 分數的加減","13–14","",""],["8 乘除的應用","15–16","",""],["9 小數","17–18","",""],["10 報讀表格","19","",""],["加油小站二、數學探索","20–21","",""]]],["國語",[["最美的模樣","1–2","","變得好好玩"],["玩玩具","3","","變得好好玩"],["愛玉的變身術","4","","變得好好玩"],["語文天地一","5","","變得好好玩"],["多多的寶物","6","","變得好好玩"],["楊修猜字","7","","語文小小兵"],["唱反調","8","","語文小小兵"],["一飛沖天","9","","語文小小兵"],["語文天地二","10","","語文小小兵"],["井仔腳鹽田","11","","一起去旅行"],["和魚一起游泳","12","","一起去旅行"],["三峽老街樂藍染","13","","一起去旅行"],["語文天地三","14","","一起去旅行"],["騎鐵馬郊遊趣","15","","一起去旅行"],["地球的眼淚","16","","現在才知道"],["枯木是大飯店","17","","現在才知道"],["騎樓","18","","現在才知道"],["語文天地四","19","","現在才知道"],["句號不在的時候、發現臺北城","20","","現在才知道"]]],["自然科學",[["一、種菜好好玩","1–6","","菜園裡的菜／照顧蔬菜／蔬菜長大了"],["二、溫度與物質變化的關係","7–10","","物質變化的現象／溫度改變對水的影響／溫度改變對物質的影響"],["三、天氣特派員","11–15","","認識天氣與天氣資訊／測量與記錄天氣／天氣變化與生活"],["四、廚房中的科學","16–20","","認識廚房裡的材料／物質能溶解的量／菜汁變色了"]]],["社會",[["一、居住的地方","1–6","","1 生活與環境／2 在地的特色／3 認識地方的方法"],["二、生活中的互動","7–10","","1 敦親睦鄰／2 為民服務"],["三、生活中的消費","11–14","","1 生活與消費／2 消費與選擇"],["四、地名的由來與地方的故事","15–18","","1 地名的由來／2 探索地方的地名／3 居住地方的故事"],["〔探究〕打造幸福的家園","19–20","",""]]]]},"hanlin":{"上":[["數學",[["一、10000以內的數","1–2","",""],["二、10000以內的加減","3–4","",""],["三、毫米與數線","5–6","",""],["四、乘法","7–8","",""],["學習加油讚（一）","9","",""],["五、角與形狀","10–11","",""],["六、除法","12–13","",""],["七、公斤與公克","14–15","",""],["八、分數","16–17","",""],["九、列表與規律","18–19","",""],["學習加油讚（二）","20","",""],["數學園地","21","",""]]],["國語",[["第一課 時間是什麼","1","","第壹單元 運用時間"],["第二課 明天再寫","2","","第壹單元 運用時間"],["第三課 提早五分鐘","3","","第壹單元 運用時間"],["統整活動一","4","","第壹單元 運用時間"],["第四課 猴子的數學","5","","第貳單元 解決問題"],["第五課 便利貼的妙用","6","","第貳單元 解決問題"],["第六課 小鉛筆大學問","7","","第貳單元 解決問題"],["統整活動二","8","","第貳單元 解決問題"],["愛閱讀一 靈光一現","9","","第貳單元 解決問題"],["壹、貳單元複習","10","","第貳單元 解決問題"],["第七課 風的味道","11","","第參單元 走進大自然"],["第八課 寄居蟹找新家","12","","第參單元 走進大自然"],["第九課 阿塱壹古道","13","","第參單元 走進大自然"],["統整活動三","14","","第參單元 走進大自然"],["第十課 秋千上的婚禮","15","","第肆單元 美好的祝福"],["第十一課 一路平安","16","","第肆單元 美好的祝福"],["第十二課 大團圓","17","","第肆單元 美好的祝福"],["統整活動四","18","","第肆單元 美好的祝福"],["愛閱讀二 老鼠嫁女兒","19","","第肆單元 美好的祝福"],["參、肆單元複習","20","","第肆單元 美好的祝福"]]],["自然科學",[["一、植物大發現","1–6","","1 認識植物／2 植物的葉、莖、根／3 植物的花、果實、種子"],["二、磁鐵好好玩","7–11","","1 磁鐵的磁力／2 磁鐵的祕密／3 磁鐵在生活中的應用"],["三、風與空氣","12–17","","1 風力與風向／2 奇妙的空氣／3 空氣、風與生活"],["四、奇妙的溶解","18–21","","1 分辨物質的方法／2 物質在水中溶解了／3 溶解的應用"]]],["社會",[["一、三年級的我","1–4","","我的三年級夥伴／三年級的改變"],["二、學習真有趣","5–7","","學習的主人／讓學習更寬廣"],["三、校園規範與班級自治","8–11","","遵守團體規範／班級自治活動"],["四、角色你我他","12–14","","家庭角色大集合／學校角色萬花筒／社會角色變變變"],["五、快樂成長的童年","15–18","","健康活力的童年／我的小祕密／和諧的相處"],["六、打造更美好的班級","19–20","",""]]],["英語",[["開學預備週 Alphabet, Classroom English","1","","字母與教室用語"],["Starter","2","","數字、打招呼及自我介紹"],["Unit 1 What's Your Name?","3–6","","詢問名字與自我介紹"],["Unit 2 How Old Are You?","7–10","","年齡（第8週 Halloween）"],["Review 1 & Exam 1","11","","複習一、期中評量"],["Unit 3 What's This?","12–15","","教室常見物品"],["Unit 4 What Color Is It?","16–19","","顏色"],["Review 2 & Exam 2","20","","複習二、期末評量與文化單元"]]]],"下":[["數學",[["一、除法","1–3","",""],["二、公升與毫升","4–5","",""],["三、分數與加減","6–7","",""],["四、圓","8","",""],["五、兩步驟應用問題","9–10","",""],["學習加油讚（一）","11","",""],["六、一位小數","12–13","",""],["七、時間","14–15","",""],["八、乘與除","16–17","",""],["九、面積","18–19","",""],["學習加油讚（二）","20","",""],["數學園地","21","",""]]],["國語",[["第一課 拔不起來的筆","1","","第壹單元 人物組曲"],["第二課 還差一點","2","","第壹單元 人物組曲"],["第三課 用膝蓋跳舞的女孩","3","","第壹單元 人物組曲"],["統整活動一","4","","第壹單元 人物組曲"],["第四課 靜靜的淡水河","5","","第貳單元 臺灣風景畫"],["第五課 茶鄉鹿谷","6","","第貳單元 臺灣風景畫"],["第六課 月世界之旅","7","","第貳單元 臺灣風景畫"],["統整活動二","8","","第貳單元 臺灣風景畫"],["愛閱讀一 熱愛昆蟲的法布爾","9","","第貳單元 臺灣風景畫"],["壹、貳單元複習","10","","第貳單元 臺灣風景畫"],["第七課 做泡菜","11","","第參單元 生活小智慧"],["第八課 行人的守護者","12","","第參單元 生活小智慧"],["第九課 就愛兩兩在一起","13","","第參單元 生活小智慧"],["統整活動三","14","","第參單元 生活小智慧"],["第十課 飛行員和小王子","15","","第肆單元 奇幻故事屋"],["第十一課 畫龍點睛","16","","第肆單元 奇幻故事屋"],["第十二課 掉進一個兔子洞","17","","第肆單元 奇幻故事屋"],["統整活動四","18","","第肆單元 奇幻故事屋"],["愛閱讀二 巨人傳說","19","","第肆單元 奇幻故事屋"],["參、肆單元複習","20","","第肆單元 奇幻故事屋"]]],["自然科學",[["一、快樂小農夫","1–6","","1 菜園大發現／2 種植前的準備／3 小農夫日記"],["二、千變萬化的水","7–11","","1 毛細現象／2 水的三態變化／3 水在生活中的應用"],["三、天氣停看聽","12–16","","1 觀測天氣／2 氣象預報／3 季節與生活"],["四、動物王國","17–21","","1 動物的身體構造與功能／2 動物的生存／3 愛護動物"]]],["社會",[["一、我居住的地方","1–4","","我與鄰居的互動／探訪居住的地方"],["二、多元的生活空間","5–7","","不同地區的空間／多元的生活方式與交流"],["三、生活中的各行各業","8–10","","居住地方的產業和生活／職業甘苦談"],["四、生活與工作的轉變","10–13","","生活需求的改變／工作方式的轉變／社會變遷產生的影響"],["五、儲蓄與消費","14–16","","儲蓄有計畫／消費有學問／購物好習慣"],["六、小小街道觀察家","17–20","",""]]],["英語",[["Starter","1","","字母拼讀與數字11–15"],["Unit 1 Is That a Dog?","2–5","","寵物"],["Unit 2 Can You Swim?","6–9","","能力"],["Review 1","10","",""],["Unit 3 Who's She?","11–14","","介紹家人（第13週 Mother's Day）"],["Unit 4 Is He a Teacher?","15–18","","職業"],["Review 2、Final Review","19","",""],["Exam 2、Culture","20","",""]]]]}},"4":{"kangxuan":{"上":[["英語",[["Get Ready","1","","字母拼讀、數字"],["Unit 1 The Big Wind","2–4","","天氣"],["Unit 2 Going Back Home","5–8","","時間"],["Culture & Festivals: Halloween","9","","萬聖節"],["Review 1","10","",""],["Unit 3 Be Honest","11–14","","文具"],["Unit 4 Earthquake Drill","15–18","","位置"],["Review 2","19–21","",""]]],["數學",[["第一單元 一億以內的數","1–2","",""],["第二單元 整數的乘法","3–4","",""],["第三單元 角度","5–6","",""],["第四單元 整數的除法","7–8","",""],["第五單元 公里","9–10","",""],["第六單元 三角形","11–12","",""],["第七單元 小數","13–14","",""],["第八單元 整數四則計算","15–16","",""],["第九單元 分數","17–18","",""],["第十單元 統計圖","19–21","",""]]],["國語",[["第一課 水陸小高手","1–2","","第一單元 歡樂好時光"],["第二課 放學後","3","","第一單元 歡樂好時光"],["第三課 我的籃球夢","4","","第一單元 歡樂好時光"],["學習地圖一","5","","第一單元 歡樂好時光"],["第四課 永遠的馬偕","6","","第二單元 人物寫真"],["第五課 假如給我三天光明","7–8","","第二單元 人物寫真"],["第六課 攀登生命的高峰","9","","第二單元 人物寫真"],["學習地圖二","10","","第二單元 人物寫真"],["閱讀階梯一 種樹的人","11","","第二單元 人物寫真"],["第七課 美味的一堂課","12","","第三單元 放眼看世界"],["第八課 建築界的長頸鹿","13","","第三單元 放眼看世界"],["第九課 請到我的家鄉來","14","","第三單元 放眼看世界"],["學習地圖三","15","","第三單元 放眼看世界"],["第十課 奇幻旋律","16","","第四單元 魔法變變變"],["第十一課 兔子先生等等我","17","","第四單元 魔法變變變"],["第十二課 老鞋匠和小精靈","18–19","","第四單元 魔法變變變"],["學習地圖四","20","","第四單元 魔法變變變"],["閱讀階梯二 國王的噴泉","21","","第四單元 魔法變變變"]]],["自然科學",[["一、地表的靜與動","1–5","","活動一 地表物質有什麼／活動二 地表環境會變動嗎／活動三 怎樣做好地震防災"],["二、水生生物與環境","5–9","","活動一 生物生存的環境都相同嗎／活動二 水生生物如何適應環境／活動三 如何愛護環境"],["三、有趣的聲光現象","10–14","","活動一 聲音如何產生和傳播／活動二 光有什麼特性／活動三 如何應用聲與光"],["四、好玩的電路","14–21","","活動一 如何讓燈泡發亮／活動二 電路有哪些連接方式／活動三 用電觀念知多少"]]],["社會",[["第一單元 家鄉的自然環境","1–6","","家鄉在哪裡／家鄉的地形／氣候、水資源與生活"],["第二單元 家鄉的傳統住屋與器物","7–10","","傳統住屋與生活／器物與生活"],["第三單元 家鄉的傳統信仰與老街","11–14","","信仰與生活／老街與生活"],["第四單元 家鄉的作息、節慶與節日","15–20","","生活的作息／傳統的節慶／現代的節日"],["主題探究與實作","21","",""]]]],"下":[["英語",[["Get Ready","1","","數字"],["Unit 1 A Dollhouse for Jello","2–5","","房間"],["Unit 2 A Video Call from Boka","6–9","","動作"],["Review 1","10","",""],["Unit 3 Let's Have Lunch!","11–14","","食物"],["Unit 4 At the Zoo","15–19","","動物（第18週 Dragon Boat Festival）"],["Review 2","20–21","",""]]],["數學",[["第一單元 多位數的乘與除","1–2","",""],["第二單元 四邊形","3–4","",""],["第三單元 概數","5–6","",""],["第四單元 數量規律","7–8","",""],["第五單元 小數乘法","9–10","",""],["第六單元 周長與面積","11–12","",""],["第七單元 等值分數","13–14","",""],["第八單元 簡化計算","15–16","",""],["第九單元 時間的計算","17–18","",""],["第十單元 立方公分","19–21","",""]]],["國語",[["第一課 一束鮮花","1–2","","第一單元 擁抱正能量"],["第二課 心動不如行動","3","","第一單元 擁抱正能量"],["第三課 選拔動物之星","4","","第一單元 擁抱正能量"],["學習地圖一","5","","第一單元 擁抱正能量"],["第四課 米食飄香","6","","第二單元 文化廣角鏡"],["第五課 讀書報告——藍色小洋裝","7","","第二單元 文化廣角鏡"],["第六課 我愛鹿港","8–9","","第二單元 文化廣角鏡"],["學習地圖二","10","","第二單元 文化廣角鏡"],["閱讀階梯一 她是我姐姐","11","","第二單元 文化廣角鏡"],["第七課 未來的模樣","12","","第三單元 科技無極限"],["第八課 動物老師的智慧","13","","第三單元 科技無極限"],["第九課 向太空出發","14","","第三單元 科技無極限"],["學習地圖三","15","","第三單元 科技無極限"],["第十課 小青蛙想看海","16","","第四單元 閱讀變裝秀"],["第十一課 窗前的月光","17","","第四單元 閱讀變裝秀"],["第十二課 如來佛的手掌心","18","","第四單元 閱讀變裝秀"],["學習地圖四","19","","第四單元 閱讀變裝秀"],["閱讀階梯二 南安小熊回家","20–21","","第四單元 閱讀變裝秀"]]],["自然科學",[["一、白天和夜晚的天空","1–5","","活動一 日夜景象有什麼不同／活動二 一天中太陽的位置會改變嗎／活動三 月亮每天都在變嗎"],["二、水的移動","6–10","","活動一 毛細現象有什麼特性／活動二 虹吸現象有什麼特性／活動三 連通管原理有什麼特性"],["三、昆蟲大解密","11–14","","活動一 昆蟲在哪裡／活動二 昆蟲如何適應環境與成長／活動三 昆蟲重要嗎"],["四、自然資源與利用","15–21","","活動一 能量重要嗎／活動二 如何運用自然資源／活動三 開發自然資源會有什麼影響"]]],["社會",[["第一單元 家鄉的產業","1–6","","家鄉的農、漁、畜牧業／家鄉的工業／家鄉的服務業"],["第二單元 家鄉的人口","7–10","","家鄉人口的分布／家鄉人口的變化"],["第三單元 家鄉的交通","11–13","","家鄉的運輸／訊息的傳遞"],["第四單元 家鄉風情畫","14–20","","家鄉的風貌／家鄉的特產／愛我家鄉"],["主題探究與實作","21","",""]]]]},"hanlin":{"上":[["英語",[["Starter Unit","1–2","","字母、數字與教室用語"],["Moon Festival","3","","中秋節"],["Unit 1 How's the Weather?","4–6","","天氣"],["Unit 2 Are You Thirsty?","7–9","","感覺"],["Review 1","10–11","",""],["Unit 3 What Are These?","12–15","","食物"],["Unit 4 Do You Want Some Pizza?","16–19","","食物"],["Review 2","20","",""]]],["數學",[["一、一億以內的數","1–2","",""],["二、乘法","3–4","",""],["三、角度","5–6","",""],["四、假分數與帶分數","7–8","",""],["五、公里","9","",""],["學習加油讚（一）","10","",""],["六、除法","11–12","",""],["七、三角形與全等","13–14","",""],["八、兩步驟問題與併式","15–16","",""],["九、二位小數","17–18","",""],["十、統計圖表","19","",""],["學習加油讚（二）","20","",""],["數學園地","21","",""]]],["國語",[["第一課 美麗島","1","","第壹單元 我愛家鄉"],["第二課 請到我的家鄉來","2","","第壹單元 我愛家鄉"],["第三課 鏡頭下的家鄉","3","","第壹單元 我愛家鄉"],["統整活動一","4","","第壹單元 我愛家鄉"],["第四課 飛行夢","5","","第貳單元 天空的奇想"],["第五課 月光下","6","","第貳單元 天空的奇想"],["第六課 又遠又近的月亮","7","","第貳單元 天空的奇想"],["統整活動二","8","","第貳單元 天空的奇想"],["愛閱讀一 通信方式大不同","9","","第貳單元 天空的奇想"],["壹、貳單元複習","10","","第貳單元 天空的奇想"],["第七課 松鼠先生的麵包","11","","第參單元 品德小故事"],["第八課 平凡的大俠","12","","第參單元 品德小故事"],["第九課 王子折箭","13","","第參單元 品德小故事"],["統整活動三","14","","第參單元 品德小故事"],["第十課 海中的熱帶雨林","15","","第肆單元 海洋世界"],["第十一課 美食島","16","","第肆單元 海洋世界"],["第十二課 寧靜的音樂會","17","","第肆單元 海洋世界"],["統整活動四","18","","第肆單元 海洋世界"],["愛閱讀二 一起去看海","19","","第肆單元 海洋世界"],["參、肆單元複習","20","","第肆單元 海洋世界"]]],["自然科學",[["一、閃亮的天空","1–5","","1 一天的天空／2 月亮的位置／3 月相的變化"],["二、水域環境","6–11","","1 認識水域環境／2 水生植物／3 水生動物／4 珍惜水域環境"],["三、物質變變變","12–16","","1 影響物質變化的因素／2 溫度對物質的影響／3 酸與鹼對物質的影響"],["四、聲光世界真有趣","17–20","","1 聲音的產生與傳播／2 光的直進與反射／3 聲音和光的應用"]]],["社會",[["第一單元 家鄉的地圖與運用","1–3","","閱讀生活中的地圖／善用地圖好生活"],["第二單元 家鄉的地形與氣候","4–5","","高低起伏的地形／千變萬化的氣候"],["第三單元 家鄉的人口與生活","6–8","","家鄉的人口組成／人口變化與發展"],["第四單元 家鄉的多元文化","9–11","","家鄉的飲食文化／家鄉的多元服飾／家鄉的多元語言與命名"],["第五單元 家鄉的節慶與禮俗","12–16","","家鄉的傳統節慶／家鄉的現代節日／家鄉的生命禮俗"],["第六單元 家鄉故事導覽員","17–20","",""]]]],"下":[["英語",[["Starter Unit","1–2","","字母、拼讀、句型與教室用語"],["Unit 1 What Time Is It?","3–5","","時間"],["Unit 2 What Are You Doing?","6–9","","日常活動"],["Review 1","10","",""],["Easter","11","","復活節"],["Unit 3 Where Are You?","12–15","","家中空間"],["Unit 4 Where's My Hat?","16–19","","物品位置"],["Review 2","20","",""]]],["數學",[["一、概數","1–2","",""],["二、四則運算","3–4","",""],["三、垂直、平行與四邊形","5–6","",""],["四、分數（一）","7","",""],["五、形體的大小","8","",""],["學習加油讚（一）","9","",""],["六、小數乘法","10","",""],["七、周長與面積","11–12","",""],["八、分數（二）","13–14","",""],["九、時間的計算","15–16","",""],["十、規律","17–18","",""],["學習加油讚（二）","19","",""],["數學園地","20","",""]]],["國語",[["第一課 稻間鴨","1","","第壹單元 與自然共處"],["第二課 綠色魔法學校","2","","第壹單元 與自然共處"],["第三課 石虎兄妹","3","","第壹單元 與自然共處"],["統整活動一","4","","第壹單元 與自然共處"],["第四課 阿里棒棒","5","","第貳單元 歡樂好時節"],["第五課 快樂兒童日","6","","第貳單元 歡樂好時節"],["第六課 阿公的祕密","7","","第貳單元 歡樂好時節"],["統整活動二","8","","第貳單元 歡樂好時節"],["愛閱讀一 玫瑰書閱讀日","9","","第貳單元 歡樂好時節"],["壹、貳單元複習","10","","第貳單元 歡樂好時節"],["第七課 棒球英雄夢","11","","第參單元 運動樂趣多"],["第八課 夢幻全壘打","12","","第參單元 運動樂趣多"],["第九課 單車遊日月潭","13","","第參單元 運動樂趣多"],["統整活動三","14","","第參單元 運動樂趣多"],["第十課 孫悟空三借芭蕉扇","15","","第肆單元 好讀故事館"],["第十一課 最後一片葉子","16","","第肆單元 好讀故事館"],["第十二課 閱讀課","17","","第肆單元 好讀故事館"],["統整活動四","18","","第肆單元 好讀故事館"],["愛閱讀二 拔一條河","19","","第肆單元 好讀故事館"],["參、肆單元複習","20","","第肆單元 好讀故事館"]]],["自然科學",[["一、生活中的力","1–5","","1 力的作用／2 力的比較與表示／3 動力傳送"],["二、水的奇妙現象","6–9","","1 連通管／2 虹吸現象／3 引水裝置"],["三、變動的大地","10–14","","1 我們的大地／2 地表的變化／3 大地的災害"],["四、能源與電路","15–20","","1 生活中的能源／2 燈泡亮了／3 串聯和並聯／4 節約能源"]]],["社會",[["第一單元 家鄉的水資源","1–2","","人們善用水資源／開發與節約用水"],["第二單元 家鄉的山與海","3–6","","山林資源開發與轉變／漁業發展與保護"],["第三單元 家鄉的農牧生活","7–10","","農耕方式的轉變／畜牧發展與食安"],["第四單元 家鄉的老故事","11–12","","家鄉的文物保存／家鄉的傳統建築／家鄉的民俗文化"],["第五單元 家鄉的新風貌","13–16","","環境新風貌／鄉鎮發展新活力／都市的轉型發展"],["第六單元 歡迎來到我的家鄉","17–20","",""]]]]},"nani":{"上":[["數學",[["1 一億以內的數","1–2","",""],["2 乘法","3–4","",""],["3 角度","5–6","",""],["4 除法","7–8","",""],["5 三角形","9","",""],["加油小站一 魔數小偵探","10","",""],["6 分數","11–12","",""],["7 數量關係","12–13","",""],["8 整數四則","14–15","",""],["9 小數","16–17","",""],["10 長度","18–19","",""],["加油小站二 數學探索","20","",""]]],["國語",[["窗口邊的臺灣欒樹","1","","第壹單元 生活好滋味"],["奶奶的排骨粥","2","","第壹單元 生活好滋味"],["充滿希望的五味屋","3","","第壹單元 生活好滋味"],["語文天地一","4","","第壹單元 生活好滋味"],["讀寫練功房","5","","第壹單元 生活好滋味"],["玉山之歌","6","","第貳單元 超級臺灣隊"],["高舉臺灣之光","7","","第貳單元 超級臺灣隊"],["臺灣的驕傲","8","","第貳單元 超級臺灣隊"],["語文天地二","9","","第貳單元 超級臺灣隊"],["到此「藝」遊","10","","第參單元 小小觀察家"],["四季的頭髮","11","","第參單元 小小觀察家"],["阿白觀察記","12","","第參單元 小小觀察家"],["語文天地三","13","","第參單元 小小觀察家"],["讀寫練功房","14","","第參單元 小小觀察家"],["老鼠嫁女兒","15","","第肆單元 跟著故事跑"],["豆粥婆婆","16","","第肆單元 跟著故事跑"],["戴斗笠的地藏","17","","第肆單元 跟著故事跑"],["語文天地四","18","","第肆單元 跟著故事跑"],["神奇讀卡機 寶特瓶變新「裝」","19","","神奇讀卡機"],["神奇讀卡機 春節的竹竿","20","","神奇讀卡機"]]],["自然科學",[["一、地球的夥伴—日月星辰","1–4","","太陽、月亮與星星／多變的月亮／月相變化與生活"],["二、水中世界","5–9","","水中生物的生長環境／水中生物的外形與構造／愛護水域環境"],["三、光和能源","10–14","","光的行進方向／能量和能源轉換／節能減碳"],["四、電路好好玩","15–20","","讓燈泡亮的方式／電路的串聯和並聯／生活中的電"]]],["社會",[["一、交通與訊息","1–6","","1 陸地的運輸／2 船運與空運／3 訊息的傳播"],["二、地圖上的家鄉","7–10","","1 閱讀地圖認識家鄉／2 家鄉的地圖"],["三、認識家鄉景觀","11–13","","1 家鄉的景觀／2 家鄉景觀與生活"],["四、家鄉的節慶","14–18","","1 家鄉的傳統節慶／2 家鄉的特色節慶活動／3 發現生活中的節日"],["〔探究〕家鄉的生活","19–20","",""]]]],"下":[["數學",[["1 多位數的乘與除","1–2","",""],["2 四邊形","3–4","",""],["3 分數的加減和整數倍","4–5","",""],["4 概數","6–7","",""],["5 統計圖表","8–9","",""],["加油小站一","10","",""],["6 小數乘以整數","11–12","",""],["7 周長和面積","13–14","",""],["8 等值分數","15–16","",""],["9 時間的加減","17–18","",""],["10 立方公分","18–19","",""],["加油小站二 數學探索","20","",""]]],["國語",[["火旁龍慶元宵","1–2","","第壹單元 文化寶盒"],["看戲","3","","第壹單元 文化寶盒"],["舞吧！小飛魚","4","","第壹單元 文化寶盒"],["語文天地一","5","","第壹單元 文化寶盒"],["讀寫練功房","6","","第壹單元 文化寶盒"],["蝶之生","7","","第貳單元 迎向挑戰"],["活出生命奇蹟","8","","第貳單元 迎向挑戰"],["走過就知道","9","","第貳單元 迎向挑戰"],["語文天地二","10","","第貳單元 迎向挑戰"],["不一樣的母親花","11","","第參單元 愛在哪裡"],["屋頂上的小貓","12","","第參單元 愛在哪裡"],["用一公斤愛嘉明湖","13","","第參單元 愛在哪裡"],["語文天地三","14","","第參單元 愛在哪裡"],["讀寫練功房","15","","第參單元 愛在哪裡"],["想像與發明","16","","第肆單元 想像起飛"],["小事物大驚奇","17","","第肆單元 想像起飛"],["九蛙傳奇","18","","第肆單元 想像起飛"],["語文天地四","19","","第肆單元 想像起飛"],["神奇讀卡機 大胖鵝的願望、掉進兔子洞","20","","神奇讀卡機"]]],["自然科學",[["一、生活中有趣的力","1–5","","生活中的各種力／力的表示方法／浮力"],["二、昆蟲家族","6–10","","認識昆蟲／昆蟲的一生／昆蟲與生活"],["三、水的移動","11–15","","水怎麼移動／認識連通管原理的特性／認識虹吸現象的特性"],["四、了解臺灣的環境","16–20","","認識地表環境／變動的地表環境／地震與防災"]]],["社會",[["一、家鄉的地形與氣候","1–6","","1 家鄉的地形／2 家鄉的氣候／3 地形、氣候與生活"],["二、家鄉的產業與創新","7–10","","1 家鄉的產業／2 翻轉產業新生命"],["三、家鄉的人口","11–13","","1 家鄉的人口組成／2 家鄉人口的分布與變化"],["四、多元文化與願景","14–17","","1 家鄉的古早味／2 家鄉文化的變遷／3 家鄉的現今風貌"],["〔探究〕想像家鄉的樣子","18–20","",""]]]]}},"6":{"kangxuan":{"上":[["英語",[["Unit 1 Whale Watching","1–5","","國家（第4週 Moon Festival）"],["Unit 2 Having a Cold","6–9","","病症"],["Review 1","10","",""],["Unit 3 From Farm to Table","11–14","","食物"],["Unit 4 A Call in the Morning","15–18","","生活作息"],["Review 2","19–21","",""]]],["數學",[["第一單元 最大公因數與最小公倍數","1–2","",""],["第二單元 分數除法","3–4","",""],["第三單元 數量關係","5–6","",""],["第四單元 小數除法","7–8","",""],["第五單元 比與比值","9–10","",""],["第六單元 圓周長與扇形周長","11–13","",""],["第七單元 圓面積與扇形面積","14–15","",""],["第八單元 認識速率","16–18","",""],["第九單元 放大圖、縮圖與比例尺","19–21","",""]]],["國語",[["第一課 跑道","1–2","","第一單元 擷取品格的珍寶"],["第二課 朱子治家格言選","3","","第一單元 擷取品格的珍寶"],["第三課 談遇見更好的自己","4","","第一單元 擷取品格的珍寶"],["學習地圖一","5","","第一單元 擷取品格的珍寶"],["第四課 臺灣美食詩選","6","","第二單元 品嘗美食的滋味"],["第五課 最好的味覺禮物","7","","第二單元 品嘗美食的滋味"],["第六課 珍珠奶茶","8","","第二單元 品嘗美食的滋味"],["學習地圖二","9","","第二單元 品嘗美食的滋味"],["閱讀階梯一 野菜，部落不可缺的味","10","","第二單元 品嘗美食的滋味"],["第七課 大小剛好的鞋子","11","","第三單元 展現思辨的智慧"],["第八課 狐假虎威","12","","第三單元 展現思辨的智慧"],["第九課 空城計","13","","第三單元 展現思辨的智慧"],["學習地圖三","14","","第三單元 展現思辨的智慧"],["第十課 耶誕節","15","","第四單元 擁抱經典的真情"],["第十一課 下午茶風波","16","","第四單元 擁抱經典的真情"],["第十二課 橘子","17–18","","第四單元 擁抱經典的真情"],["學習地圖四","19","","第四單元 擁抱經典的真情"],["閱讀階梯二 心靈小詩","20–21","","第四單元 擁抱經典的真情"]]],["自然科學",[["第一單元 探索天氣的變化","1–5","","雲霧雨雪的形成、水循環、天氣圖、颱風、氣候變遷"],["第二單元 水溶液","6–10","","溶解與重量、蒸發分離、導電性、酸鹼與中和"],["第三單元 動物大解密","11–14","","動物的運動方式、呼吸系統、動物與人類生活"],["第四單元 電磁作用","15–21","","指北針與地磁、電磁鐵、電磁作用的應用與電磁波"]]],["社會",[["第一單元 民主政治的發展","1–6","","臺灣人民爭取民主自由的歷程為何？／臺灣人民有哪些權利和義務？／民主國家政府與人民的關係為何？"],["第二單元 社會變遷下的個人發展與族群文化","7–10","","個人發展如何受到社會變遷的影響？／族群交流如何影響臺灣社會？"],["第三單元 戰後經濟發展、轉型與生活","11–14","","戰後經濟發展如何影響人們生活？／臺灣如何邁向科技島？"],["第四單元 臺灣的城鄉與區域發展","15–19","","臺灣的工業化與都市化如何發展？／生活圈如何形成與發展？／區域如何畫分與調整？"],["主題探究與實作 臺灣向前行","20","",""]]]],"下":[["英語",[["Unit 1 The Farewell","1–4","","過去時間"],["Unit 2 Friends Forever","5–8","","地點"],["Review 1","9","",""],["Unit 3 A New Friend","10–13","","休閒活動"],["Unit 4 Kevin's Dream Job","14–16","","職業"],["Review 2、Culture & Festivals","17–19","","父親節"]]],["數學",[["第一單元 小數與分數的計算","1–2","",""],["第二單元 速率的應用","3–4","",""],["第三單元 柱體體積與表面積","5–7","",""],["第四單元 基準量與比較量","8–9","",""],["第五單元 怎樣解題","10–13","",""],["第六單元 圓形圖","14–19","",""]]],["國語",[["第一課 馬達加斯加，出發！","1–2","","第一單元 望見美麗的大地"],["第二課 沉睡的天空之城","3","","第一單元 望見美麗的大地"],["第三課 走進太陽之城","4","","第一單元 望見美麗的大地"],["學習地圖一","5","","第一單元 望見美麗的大地"],["第四課 送友人","6","","第二單元 品味生活的點滴"],["第五課 蚵鄉風情","7–8","","第二單元 品味生活的點滴"],["第六課 童年‧夏日‧棉花糖","9","","第二單元 品味生活的點滴"],["學習地圖二","10","","第二單元 品味生活的點滴"],["閱讀階梯 一個晴朗的早晨","11","","第二單元 品味生活的點滴"],["第七課 我的少年夢","12","","第三單元 向著明亮的那方"],["第八課 如何張開追夢的翅膀","13–14","","第三單元 向著明亮的那方"],["第九課 成為人生的開拓者","15–18","","第三單元 向著明亮的那方"],["學習地圖三","19","","第三單元 向著明亮的那方"]]],["自然科學",[["第一單元 簡單機械","1–5","","槓桿、輪軸、滑輪、齒輪與鏈條"],["第二單元 能量與生活","6–9","","動能、能量轉換、再生與非再生能源"],["第三單元 地球的生態","10–18","","食物鏈、族群與群集、生態系、生物多樣性"]]],["社會",[["第一單元 世界多元文化與科技發展對臺灣的影響","1–9","","世界多元文化在臺灣如何展現？／能源科技的發展如何影響臺灣？／生物、資訊科技的發展如何影響臺灣？"],["第二單元 臺灣走向世界","10–16","","為什麼臺灣要參與國際事務？／為什麼我們要關心人權議題？／為什麼我們要關心環境議題？"],["主題探究與實作 科技改變生活","17–18","",""]]]]},"hanlin":{"上":[["英語",[["開學預備週","1","","World Map & Fast Facts、Phonics Review"],["Starter","2","",""],["Unit 1 Where Are You From?","3–6","","國家"],["Unit 2 How Do You Go to School?","7–10","","交通工具"],["Review 1","11","",""],["Unit 3 What Do You Do on Weekends?","12–15","","日常活動"],["Unit 4 What Time Do You Get Up?","16–19","","生活作息"],["Review 2","20","",""],["Culture & Let's Explore","21","","各國新年習俗"]]],["數學",[["一、最大公因數與最小公倍數","1–3","",""],["二、分數除法","3–5","",""],["三、小數除法","5–6","",""],["四、比與比值","7–8","",""],["學習加油讚（一）","9","",""],["五、兩量關係","10–11","",""],["六、圓周長與扇形周長","12–13","",""],["七、放大、縮小與比例尺","14–15","",""],["八、怎樣解題","16–19","",""],["學習加油讚（二）、看繪本學數學","20","",""],["數學園地","21","",""]]],["國語",[["第一課 遇見自己","1","","第壹單元 更好的自己"],["第二課 為什麼大家不理我？","2","","第壹單元 更好的自己"],["第三課 孔子說的話","3","","第壹單元 更好的自己"],["統整活動一","4","","第壹單元 更好的自己"],["第四課 向大自然學習","5","","第貳單元 智慧藏寶箱"],["第五課 樹的聯想","6","","第貳單元 智慧藏寶箱"],["第六課 善用自嘲，展現幽默","7","","第貳單元 智慧藏寶箱"],["統整活動二","8","","第貳單元 智慧藏寶箱"],["享閱讀一 驚蟄驅蟻記","9","","第貳單元 智慧藏寶箱"],["壹、貳單元複習","10","","第貳單元 智慧藏寶箱"],["第七課 跟著公共藝術去旅行","11","","第參單元 生活好藝術"],["第八課 街頭藝術家","12","","第參單元 生活好藝術"],["第九課 戲臺上的她與他","13","","第參單元 生活好藝術"],["統整活動三","14","","第參單元 生活好藝術"],["第十課 過故人莊","15","","第肆單元 文學萬花筒"],["第十一課 來一碗溫暖的羹湯","16","","第肆單元 文學萬花筒"],["第十二課 存根","17","","第肆單元 文學萬花筒"],["統整活動四","18","","第肆單元 文學萬花筒"],["享閱讀二 永續地球村","19","","第肆單元 文學萬花筒"],["參、肆單元複習","20–21","","第肆單元 文學萬花筒"]]],["自然科學",[["一、熱的影響與傳播","1–5","","1 物質的變化與組成／2 熱的傳播／3 保溫與散熱"],["二、多變的天氣","6–10","","1 水與天氣的關係／2 天氣圖與天氣變化／3 颱風與防災"],["三、發現大地的奧祕","11–15","","1 大地的變動與影響／2 岩石、礦物與土壤／3 防災與地景保育"],["四、電磁與生活","16–21","","1 地球像個大磁鐵／2 認識電磁鐵／3 生活中電磁鐵的應用"]]],["社會",[["第一單元 民主政治的發展","1–6","","臺灣人民爭取民主自由的歷程為何？／民主國家政府與人民的關係為何？／臺灣人民有哪些權利和義務？"],["第二單元 社會變遷下的個人發展與族群文化","7–10","","個人發展如何受到社會變遷的影響？／族群交流如何影響臺灣社會？"],["第三單元 經濟發展、轉型與生活","11–14","","戰後經濟發展如何影響人們生活？／臺灣如何發展成為科技島？"],["第四單元 都市、鄉村的互動與發展","15–19","","都市與鄉村為什麼會互動交流？／都市化與工業化如何影響人們的生活？／都市與鄉村為什麼需要邁向永續發展？"],["主題探究與實作 臺灣向前行","20","",""]]]],"下":[["英語",[["開學預備、Starter","1","",""],["Unit 1 Where Were You Yesterday?","2–4","","地點"],["Unit 2 What Did You Do Last Night?","5–8","","日常活動（含 Review 1）"],["Unit 3 How Much Is the T-shirt?","9–11","","衣物"],["Unit 4 What's Your Favorite Season?","12–15","","季節與氣候（含 Review 2）"],["旅遊計畫","15–16","",""],["Culture","17","","各國特色運動"],["Let's Explore","18–19","",""]]],["數學",[["一、小數與分數的四則運算","1–4","",""],["二、圓面積與扇形面積","4–6","",""],["三、速率","7–8","",""],["四、統計圖表","9–10","",""],["學習加油讚（一）","11","",""],["五、怎樣解題","12–14","",""],["六、角柱與圓柱","15–18","",""],["學習加油讚（二）、數學園地","19","",""]]],["國語",[["第一課 遊走在世界的市場裡","1–2","","第壹單元 用心看世界"],["第二課 到不來梅當個樂師吧","3","","第壹單元 用心看世界"],["第三課 大小剛好的鞋子","4","","第壹單元 用心看世界"],["統整活動一","5","","第壹單元 用心看世界"],["第四課 王戎辨苦李","6","","第貳單元 童年你我他"],["第五課 童年‧夏日‧棉花糖","7","","第貳單元 童年你我他"],["第六課 兒童的保護傘","8","","第貳單元 童年你我他"],["統整活動二","9","","第貳單元 童年你我他"],["享閱讀一 透視廣告的祕密","10","","第貳單元 童年你我他"],["壹、貳單元複習","11","","第貳單元 童年你我他"],["第七課 你為何而學","12","","第參單元 成長與祝福"],["第八課 我的武俠大夢","13","","第參單元 成長與祝福"],["第九課 雛鳥試飛","14","","第參單元 成長與祝福"],["統整活動三","15","","第參單元 成長與祝福"],["享閱讀二 撐開你的傘","16–17","","第參單元 成長與祝福"],["總複習","18–19","","第參單元 成長與祝福"]]],["自然科學",[["一、簡單機械","1–7","","1 槓桿／2 輪軸／3 滑輪／4 齒輪與鏈條"],["二、生活中的聲音","8–13","","1 有聲的世界／2 聲音的性質／3 自製簡易樂器"],["三、寰宇永續護地球","14–19","","1 生物與環境／2 人類活動對生態的影響／3 資源開發與永續經營"]]],["社會",[["第一單元 世界多元文化與科技發展對臺灣的影響","1–9","","世界多元文化在臺灣如何展現？／能源科技的發展如何影響臺灣？／生物、資訊科技的發展如何影響臺灣？"],["第二單元 臺灣走向世界","10–17","","為什麼臺灣要參與國際事務？／為什麼我們要關心人權議題？／為什麼我們要關心環境議題？"],["主題探究與實作 科技改變生活","18","",""]]]]},"nani":{"上":[["數學",[["1 質因數分解和短除法","1–3","",""],["2 分數的除法","4–5","",""],["3 小數的除法","6–7","",""],["4 圓周長和圓面積","8–9","",""],["加油小站一","10","",""],["5 比和比值","11–12","",""],["6 扇形的周長和面積","13–14","",""],["7 速率","15–16","",""],["8 數量關係","17–18","",""],["加油小站二","19","",""],["數學探索 密數脫逃","20–21","",""]]],["國語",[["在天晴了的時候","1","","第壹單元 美好時刻"],["珍珠鳥","2","","第壹單元 美好時刻"],["客至","3","","第壹單元 美好時刻"],["語文天地一","4","","第壹單元 美好時刻"],["讀寫練功房一 來自遠方的信","5","","第壹單元 美好時刻"],["贏得喝采的輸家","6","","第貳單元 工作圖像"],["哇！原來如此","7","","第貳單元 工作圖像"],["登月先鋒","8","","第貳單元 工作圖像"],["語文天地二","9","","第貳單元 工作圖像"],["明智的抉擇","10","","第參單元 問題解決"],["飢渴好「火」伴","11","","第參單元 問題解決"],["火燒連環船","12","","第參單元 問題解決"],["語文天地三","13","","第參單元 問題解決"],["讀寫練功房二 名偵探福爾摩斯","14","","第參單元 問題解決"],["戲術","15","","第肆單元 文學之窗"],["紀念照","16","","第肆單元 文學之窗"],["少年筆耕","17","","第肆單元 文學之窗"],["語文天地四","18","","第肆單元 文學之窗"],["閱讀充電站一 你可能不知道的職業","19","","第肆單元 文學之窗"],["閱讀充電站二 黃蓉智退霍都","20","","第肆單元 文學之窗"]]],["自然科學",[["一、多樣的天氣變化","1–5","","1 大氣中的水／2 天氣圖與天氣變化／3 認識颱風"],["二、熱對物質的影響","6–10","","1 物質受熱後的變化／2 熱的傳播方式／3 保溫與散熱"],["三、變動的大地","11–14","","1 流水的作用／2 水岸地貌／3 地表組成"],["四、奇妙的電磁世界","15–20","","1 指北針與地磁／2 神奇的電磁鐵／3 電磁作用與生活的關係"]]],["社會",[["一、日本統治下的臺灣社會","1–6","","1 日本展開在臺灣的統治／2 經濟建設對社會發展的重要性／3 社會生活與風氣的轉變"],["二、邁向民主社會","7–10","","1 臺灣的民主之路／2 民主國家的運作"],["三、戰後臺灣的經濟與城鄉發展","11–14","","1 戰後臺灣的經濟發展／2 臺灣的城鄉發展"],["四、臺灣進行式","15–18","","1 多元族群的共榮／2 開創友善的社會／3 與世界做朋友"],["〔探究〕我的生活圈","19–20","",""]]]],"下":[["數學",[["1 四則混合運算","1–3","",""],["2 圓形圖","4–5","",""],["3 基準量和比較量","6–7","",""],["4 放大圖、縮圖和比例尺","8–9","",""],["加油小站一","10","",""],["5 怎樣解題","11–13","",""],["6 柱體的體積和表面積","14–15","",""],["加油小站二","16","",""],["數學探索","17","",""],["數學博覽會","18–19","",""]]],["國語",[["風中騎士","1–2","","第壹單元 童年你我他"],["達駭黑熊","3","","第壹單元 童年你我他"],["機智的孩子","4","","第壹單元 童年你我他"],["語文天地一","5","","第壹單元 童年你我他"],["談夢想","6–7","","第貳單元 往夢想起飛"],["蒂烈娜","8","","第貳單元 往夢想起飛"],["不怕","9","","第貳單元 往夢想起飛"],["語文天地二","10","","第貳單元 往夢想起飛"],["打開心中的窗","11–12","","第參單元 給年輕的你"],["努力愛春華","13","","第參單元 給年輕的你"],["每一個孩子都有一條自己的小路","14","","第參單元 給年輕的你"],["語文天地三","15","","第參單元 給年輕的你"],["閱讀充電站一 馭風逐夢的男孩","16","","第參單元 給年輕的你"],["閱讀充電站二 失敗博物館","17","","第參單元 給年輕的你"],["閱讀充電站三 伯樂老師的最後一堂課","18","","第參單元 給年輕的你"]]],["自然科學",[["一、巧妙的施力工具","1–7","","1 認識槓桿／2 滑輪與輪軸／3 傳送動力"],["二、地球的環境與生態","8–12","","1 族群與群集／2 生物間的交互作用／3 地球的生態系"],["三、我們只有一個地球","13–18","","1 臺灣的生態／2 人類活動對環境的影響／3 打造永續家園"]]],["社會",[["一、科技與生活","1–10","","1 科技與飲食的關係／2 石化科技與生活／3 資訊科技與生活"],["二、全球交流下的臺灣","11–16","","1 世界宗教在臺灣／2 從全球交流看多元與差異／3 永續發展的地球村"],["〔探究〕守護地球的實踐者","17–18","",""]]]]}}});
+const ENG={5:ENG5};
+const NOTES={
+ 1:{hanlin:"翰林生活依 114 學年度課程計畫，請核對課本",kangxuan:"",nani:""},
+ 2:{hanlin:"翰林國語、生活依 114 學年度課程計畫，請核對課本",kangxuan:"",nani:""},
+ 3:{hanlin:"翰林國語、社會依 114 學年度課程計畫，請核對課本",kangxuan:"",nani:"英語為空白範本"},
+ 4:{hanlin:"翰林自然、社會、英語依 114 學年度課程計畫，請核對課本",kangxuan:"康軒數學的來源未標示版本，依內容判斷",nani:"英語為空白範本"},
+ 5:{hanlin:"翰林五下數學缺週次；翰林五下國語依 114 學年度課程計畫，請核對課本",kangxuan:"英語為 Wonder World",nani:"英語為空白範本"},
+ 6:{hanlin:"翰林社會依 114 學年度課程計畫；翰林自然的來源未標示版本，依內容判斷，請核對課本",kangxuan:"",nani:"英語為空白範本"}
+};
+const FIELD={"國語":"所屬單元","生活":"單元","數學":"內容","英語":"主題／內容","自然科學":"活動","社會":"課次"};
+function englishFor(pub,g,sem){
+  const src=ENG[g]&&ENG[g][pub]&&ENG[g][pub][sem];if(!src)return englishPlaceholder();
+  return {id:uid(),name:"英語",grade:"",units:src.map(([n,w,p,d])=>mkUnit(n,"todo",w||"",p||"",d?[{id:uid(),k:"主題／內容",v:d}]:[]))};
+}
+function fromData(name,units){
+  return {id:uid(),name,grade:"",units:units.map(([n,w,p,d])=>mkUnit(n,"todo",w||"",p||"",d?[{id:uid(),k:FIELD[name]||"課次／活動",v:d}]:[]))};
+}
+function hasData(pub,g){return !!(GDATA[g]&&GDATA[g][pub])}
+function semSubjects(pub,g,sem){
+  const n=g<=6?4:5;
+  const rows=hasData(pub,g)?GDATA[g][pub][sem]:[];
+  return subjectsFor(g).map(name=>{
+    const r=rows.find(x=>x[0]===name);
+    if(r)return fromData(name,r[1]);
+    if(name==="英語")return g<=6?englishFor(pub,g,sem):placeholder(name,n);
+    return placeholder(name,n);
+  });
+}
+function isEngPlaceholder(x){return x&&x.name==="英語"&&x.units.length===6&&x.units.every(u=>u.status==="todo"&&u.fields[0]&&/英語教材各校選用不一/.test(u.fields[0].v))}
+function isPlaceholder(x){return x&&x.units.length>0&&x.units.every(u=>/^第[一二三四五六七八]單元$/.test(u.name)&&u.status==="todo"&&!u.week&&!u.fields.length&&u.checks.every(c=>!c.done))}
+function upgradeData(st){ // 已存資料：空白範本換成出版社單元，已編輯過的科目不動
+  PUBS.forEach(([pub])=>GRADES.forEach(g=>SEMS.forEach(sem=>{
+    const gs=st.pubs[pub].grades[g][sem];
+    gs.subjects.forEach((x,i)=>{
+      let n=null;
+      const r=hasData(pub,g)?GDATA[g][pub][sem].find(y=>y[0]===x.name):null;
+      if((isPlaceholder(x)||isEngPlaceholder(x))&&r)n=fromData(x.name,r[1]);
+      else if(isEngPlaceholder(x)&&ENG[g]&&ENG[g][pub])n=englishFor(pub,g,sem);
+      if(n){n.id=x.id;if(gs.sel===x.id)gs.unit=n.units[0]?.id;gs.subjects[i]=n}
+    });
+  })));
+}
+function mkSem(subs){const f=subs[0];return {subjects:subs,sel:f?.id,unit:f?.units[0]?.id}}
+function mkGrade(pub,g){return {sem:"上","上":mkSem(semSubjects(pub,g,"上")),"下":mkSem(semSubjects(pub,g,"下"))}}
+function defaultState(){
+  const pubs={};
+  PUBS.forEach(([k])=>{const grades={};GRADES.forEach(g=>grades[g]=mkGrade(k,g));pubs[k]={grade:5,grades}});
+  return {pub:"hanlin",pubs};
+}
+function valid(d){return d&&d.pubs&&PUBS.every(([k])=>d.pubs[k]&&d.pubs[k].grades&&GRADES.every(g=>{const x=d.pubs[k].grades[g];return x&&x["上"]&&x["下"]}))}
+function migrateOld(old){ // v2：各年級資料移到上學期（五年級改用出版社單元）；v1：無年級，略過
+  const d=defaultState();
+  PUBS.forEach(([k])=>{const o=old.pubs&&old.pubs[k];if(!o||!o.grades)return;
+    GRADES.forEach(g=>{if(g!==5&&o.grades[g]&&o.grades[g].subjects)d.pubs[k].grades[g]["上"]={subjects:o.grades[g].subjects,sel:o.grades[g].sel,unit:o.grades[g].unit}});
+    if(o.grade)d.pubs[k].grade=o.grade});
+  d.pub=old.pub||"hanlin";return d;
+}
+let S;
+try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){S=null}
+if(!valid(S)){
+  let old=null;try{old=JSON.parse(localStorage.getItem(OLDKEYS[0]))}catch(e){}
+  S=old?migrateOld(old):defaultState();
+}
+upgradeData(S);
+const DEFAULT_SETTINGS={"上":"2026-08-31","下":"2027-02-11"};
+if(!S.settings)S.settings={...DEFAULT_SETTINGS};
+const TREES={mine:S,team:null};
+function saveLocal(){try{localStorage.setItem(KEY,JSON.stringify(TREES.mine))}catch(e){}}
+function save(){saveLocal();markDirty(keyOf(S.pub,P().grade,GR().sem))}
+
+/* ---------- 雲端同步 ---------- */
+const SYNC={db:null,user:null,uid:null,mode:"mine",status:"local",msg:"",unsub:null,dirty:new Set(),writing:new Set(),timer:null,loaded:false,canWrite:true,loadTimer:null};
+try{const m=localStorage.getItem(KEY+":mode");if(m==="team")SYNC.mode="team"}catch(e){}
+const keyOf=(pub,g,sem)=>`${pub}-${g}-${sem==="下"?2:1}`;
+function parseKey(k){const m=/^(hanlin|kangxuan|nani)-(\d)-([12])$/.exec(k);return m?{pub:m[1],g:+m[2],sem:m[3]==="2"?"下":"上"}:null}
+function colRef(mode){mode=mode||SYNC.mode;return mode==="mine"?SYNC.db.collection("data/users/"+SYNC.uid):SYNC.db.collection("team")}
+function setStatus(st,m){SYNC.status=st;SYNC.msg=m||"";renderSync()}
+function markDirty(k,mode){
+  mode=mode||SYNC.mode;
+  if(!SYNC.db||(mode==="mine"&&!SYNC.uid)||(mode==="team"&&!TREES.team))return;
+  SYNC.dirty.add(mode+"|"+k);clearTimeout(SYNC.timer);SYNC.timer=setTimeout(flush,800);
+  if(SYNC.status!=="ro")setStatus("busy");
+}
+function markAll(){PUBS.forEach(([p])=>GRADES.forEach(g=>SEMS.forEach(m=>markDirty(keyOf(p,g,m)))));markDirty("meta")}
+function bodyFor(mode,k){
+  const T=TREES[mode];if(!T)return null;
+  if(k==="meta")return {settings:T.settings||DEFAULT_SETTINGS,updatedAt:Date.now()};
+  const x=parseKey(k);if(!x)return null;
+  return {subjects:T.pubs[x.pub].grades[x.g][x.sem].subjects,updatedAt:Date.now()};
+}
+const isDirty=(mode,k)=>SYNC.dirty.has(mode+"|"+k)||SYNC.writing.has(mode+"|"+k);
+async function flush(){
+  if(!SYNC.db)return;
+  const keys=[...SYNC.dirty].filter(k=>!SYNC.writing.has(k));
+  let okCount=0;
+  for(const dk of keys){
+    SYNC.dirty.delete(dk);SYNC.writing.add(dk);
+    const [mode,k]=dk.split("|");
+    const body=bodyFor(mode,k);
+    try{ if(body){await colRef(mode).doc(k).set(JSON.parse(JSON.stringify(body)));okCount++} }
+    catch(e){
+      const c=e&&e.code;
+      if(c==="invalid_argument"&&mode==="team"){SYNC.canWrite=false;setStatus("ro","你在這份共用進度只有檢視權限，變更不會儲存");}
+      else if(c==="quota_exceeded"){setStatus("err","雲端空間已滿，變更沒有儲存");}
+      else if(c==="unavailable"||c==="resource_exhausted"){SYNC.dirty.add(dk);}
+      else {setStatus("err","無法儲存到雲端，變更暫存在這台裝置");}
+    }
+    finally{SYNC.writing.delete(dk)}
+  }
+  if(SYNC.dirty.size){clearTimeout(SYNC.timer);SYNC.timer=setTimeout(flush,2500+Math.random()*1500)}
+  else if(SYNC.status==="busy"||(SYNC.status==="err"&&okCount))setStatus(SYNC.loaded?"ok":"busy");
+}
+function editingNow(){const a=document.activeElement;return a&&$("editor").contains(a)&&/^(INPUT|TEXTAREA)$/.test(a.tagName)}
+function applySnapshot(snap){
+  const seen=new Set();
+  snap.docs.forEach(d=>{
+    seen.add(d.id);
+    if(isDirty(SYNC.mode,d.id)||d.metadata.hasPendingWrites)return;
+    const data=d.data()||{};
+    if(d.id==="meta"){if(data.settings&&typeof data.settings==="object")S.settings={...DEFAULT_SETTINGS,...data.settings};return}
+    const x=parseKey(d.id);if(!x||!Array.isArray(data.subjects))return;
+    const gs=S.pubs[x.pub].grades[x.g][x.sem];
+    gs.subjects=JSON.parse(JSON.stringify(data.subjects));
+    if(!gs.subjects.some(z=>z.id===gs.sel)){gs.sel=gs.subjects[0]?.id;gs.unit=gs.subjects[0]?.units[0]?.id}
+  });
+  return seen;
+}
+function sig(subs){return JSON.stringify(subs.map(x=>[x.name,x.grade,x.units.map(u=>[u.name,u.status,u.week,u.periods,u.checks.map(c=>[c.t,c.done]),u.fields.map(f=>[f.k,f.v]),(u.links||[]).length,(u.logs||[]).length])]))}
+function migrateLocal(seen){ // 第一次連上雲端：把這台裝置上改過、雲端還沒有的進度上傳
+  let flag=null;try{flag=localStorage.getItem(KEY+":uploaded:"+SYNC.uid)}catch(e){}
+  if(flag)return;
+  PUBS.forEach(([p])=>GRADES.forEach(g=>SEMS.forEach(m=>{
+    const k=keyOf(p,g,m);if(seen.has(k))return;
+    if(sig(S.pubs[p].grades[g][m].subjects)!==sig(semSubjects(p,g,m)))markDirty(k);
+  })));
+  if(!seen.has("meta")&&JSON.stringify(S.settings)!==JSON.stringify(DEFAULT_SETTINGS))markDirty("meta");
+  try{localStorage.setItem(KEY+":uploaded:"+SYNC.uid,"1")}catch(e){}
+}
+function subscribe(){
+  if(SYNC.unsub){SYNC.unsub();SYNC.unsub=null}
+  if(!SYNC.db||(SYNC.mode==="mine"&&!SYNC.uid)){setStatus("local");return}
+  SYNC.loaded=false;setStatus("busy","連線中");
+  clearTimeout(SYNC.loadTimer);
+  SYNC.loadTimer=setTimeout(()=>{if(!SYNC.loaded)setStatus("err","暫時連不上雲端，先顯示這台裝置上的資料")},10000);
+  const mode=SYNC.mode;
+  SYNC.unsub=colRef().onSnapshot(snap=>{
+    if(mode!==SYNC.mode)return;
+    const seen=applySnapshot(snap);
+    if(!snap.metadata.fromCache&&!SYNC.loaded){
+      SYNC.loaded=true;clearTimeout(SYNC.loadTimer);
+      if(mode==="mine")migrateLocal(seen);
+      if(SYNC.status!=="ro")setStatus(SYNC.dirty.size?"busy":"ok");
+    }
+    if(mode==="mine")saveLocal();
+    renderRemote();
+  },err=>{clearTimeout(SYNC.loadTimer);setStatus("err",err&&err.code==="revoked"?"雲端同步已停用":"雲端同步中斷，變更暫存在這台裝置")});
+}
+function switchMode(mode){
+  if(mode===SYNC.mode)return;
+  if(SYNC.dirty.size)flush();
+  const ui={pub:S.pub,grade:P().grade,sem:GR().sem};
+  SYNC.mode=mode;try{localStorage.setItem(KEY+":mode",mode)}catch(e){}
+  if(mode==="team"&&!TREES.team){TREES.team=defaultState();TREES.team.settings={...DEFAULT_SETTINGS}}
+  S=TREES[mode];S.pub=ui.pub;P().grade=ui.grade;GR().sem=ui.sem;
+  SYNC.canWrite=true;confirming=null;editingSubject=false;
+  subscribe();renderAll();
+}
+async function initCloud(){
+  if(!window.claude||!window.claude.use){setStatus("local");return}
+  try{
+    const [db,user]=await Promise.all([window.claude.use("db"),window.claude.use("user")]);
+    if(!db){setStatus("local");return}
+    SYNC.db=db;SYNC.user=user;
+    SYNC.uid=user?await user.id():null;
+    if(SYNC.mode==="team"){TREES.team=TREES.team||defaultState();TREES.team.settings=TREES.team.settings||{...DEFAULT_SETTINGS};
+      const ui={pub:S.pub,grade:P().grade,sem:GR().sem};S=TREES.team;S.pub=ui.pub;P().grade=ui.grade;GR().sem=ui.sem}
+    subscribe();renderAll();
+  }catch(e){setStatus("local")}
+}
+function renderSync(){
+  const el=$("syncbar");if(!el)return;
+  const label={local:"只存在這台裝置",ok:SYNC.mode==="mine"?"已同步到你的帳號":"已同步，分享對象看得到",busy:"同步中…",err:"同步出了問題",ro:"唯讀"}[SYNC.status];
+  const cls={local:"",ok:"ok",busy:"busy",err:"err",ro:"err"}[SYNC.status];
+  const canCloud=!!SYNC.db;
+  el.innerHTML=(canCloud?`<div class="modeseg" role="group" aria-label="進度存放位置"><button data-mode="mine" aria-pressed="${SYNC.mode==="mine"}">我的進度</button><button data-mode="team" aria-pressed="${SYNC.mode==="team"}">團隊共用</button></div>`:"")+
+    `<span><span class="dot ${cls}"></span>${label}${SYNC.msg&&SYNC.status!=="busy"?"・"+esc(SYNC.msg):""}</span>`+
+    (SYNC.mode==="team"&&canCloud?`<span>同事要一起編輯，請在分享選單把他們設為「參與者」以上</span>`:"");
+}
+function renderRemote(){
+  renderTabs();renderGrades();renderSummary();renderWeek();renderChips();renderTree();
+  if(!editingNow())renderEditor();
+}
+
+/* ---------- 本週進度 ---------- */
+function parseWeeks(w){const n=(String(w||"").match(/\d+/g)||[]).map(Number).filter(x=>x>0&&x<30);return n.length?[Math.min(...n),Math.max(...n)]:null}
+function mondayOf(d){const x=new Date(d);x.setHours(0,0,0,0);x.setDate(x.getDate()-((x.getDay()+6)%7));return x}
+function toDate(s){const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(s||"");return m?new Date(+m[1],+m[2]-1,+m[3]):null}
+function nowInfo(){
+  const st=S.settings||DEFAULT_SETTINGS,today=new Date();
+  const s2=toDate(st["下"]),s1=toDate(st["上"]);
+  const sem=s2&&today>=s2?"下":"上";const start=sem==="下"?s2:s1;if(!start)return null;
+  const wk=Math.floor((mondayOf(today)-mondayOf(start))/(7*864e5))+1;
+  const mon=mondayOf(today),fri=new Date(mon);fri.setDate(mon.getDate()+4);
+  return {sem,wk,range:`${mon.getMonth()+1}/${mon.getDate()}–${fri.getMonth()+1}/${fri.getDate()}`};
+}
+function unitTiming(u){ // 只在檢視中的學期就是本學期時判斷
+  const ni=nowInfo();if(!ni||ni.sem!==GR().sem||ni.wk<1)return "";
+  const r=parseWeeks(u.week);if(!r)return "";
+  if(r[0]<=ni.wk&&ni.wk<=r[1])return "now";
+  if(r[1]<ni.wk&&u.status!=="done")return "late";
+  return "";
+}
+let showWeekSet=false;
+function renderWeek(){
+  const ni=nowInfo(),box=$("week");
+  const setForm=`<div class="wk-set">
+    <div class="field"><label for="st1">上學期開學日</label><input type="date" id="st1" value="${esc(S.settings?.["上"]||"")}"></div>
+    <div class="field"><label for="st2">下學期開學日</label><input type="date" id="st2" value="${esc(S.settings?.["下"]||"")}"></div>
+    <button class="primary" id="wkSetDone">完成</button></div>
+    <p class="note" style="margin:0">預設依 115 學年度：上學期 8/31、下學期 2/11 開學。第 1 週從開學日那一週算起。</p>`;
+  if(!ni){box.innerHTML=`<div class="week-head"><h2>本週進度</h2></div><p class="note" style="margin:0">設定開學日後，就會標出本週該教的單元。</p>${setForm}`;return}
+  const head=ni.wk<1?`還沒開學（${ni.sem}學期）`:`本週：${ni.sem}學期第 <b>${ni.wk}</b> 週`;
+  let body="";
+  if(ni.wk>=1&&ni.sem!==GR().sem){
+    body=`<p class="note" style="margin:0">你正在看${GR().sem}學期的單元。</p><div><button class="ghost" id="wkGoSem">切換到${ni.sem}學期</button></div>`;
+  }else if(ni.wk>=1){
+    const now=[],late=[];
+    G().subjects.forEach(sb=>sb.units.forEach(u=>{const t=unitTiming(u);if(t==="now")now.push([sb,u]);else if(t==="late")late.push([sb,u])}));
+    const item=([sb,u],cls)=>`<button class="wk-item ${cls}" data-jump="${sb.id}|${u.id}"><span class="subj">${esc(sb.name)}</span><span class="nm">${esc(u.name)}</span><span class="pill ${u.status}">${ST[u.status]}</span></button>`;
+    body=`<div class="stack"><span class="wk-label">本週要教（${now.length}）</span>${now.length?`<div class="week-list">${now.map(x=>item(x,"")).join("")}</div>`:`<p class="note" style="margin:0">這週沒有排到單元，或單元還沒填週次。</p>`}</div>`+
+      (late.length?`<div class="stack"><span class="wk-label late">進度落後：週次已過但還沒完成（${late.length}）</span><div class="week-list">${late.slice(0,6).map(x=>item(x,"late")).join("")}${late.length>6?`<span class="note" style="align-self:center">還有 ${late.length-6} 個</span>`:""}</div></div>`
+      :`<p class="note" style="margin:0">週次已過的單元都完成了。</p>`);
+  }
+  box.innerHTML=`<div class="week-head"><h2>${head}</h2><span class="note">${ni.wk>=1?ni.range+"・":""}<button class="ghost" id="wkSet" style="padding:2px 8px">${showWeekSet?"收起":"設定開學日"}</button></span></div>${body}${showWeekSet?setForm:""}`;
+}
+
+
+const P=()=>S.pubs[S.pub];
+const GR=()=>P().grades[P().grade];
+const G=()=>GR()[GR().sem];
+const subj=()=>G().subjects.find(x=>x.id===G().sel)||G().subjects[0];
+const unit=()=>{const s=subj();return s?s.units.find(u=>u.id===G().unit):null};
+let confirming=null; // "unit" | "subject"
+let editingSubject=false;
+
+const $=id=>document.getElementById(id);
+
+function pct(units){if(!units.length)return 0;return Math.round(units.filter(u=>u.status==="done").length/units.length*100)}
+
+function renderTabs(){
+  $("tabs").innerHTML=PUBS.map(([k,n])=>`<button class="tab" role="tab" id="tab-${k}" aria-selected="${S.pub===k}" data-pub="${k}">${n}</button>`).join("");
+  document.body.dataset.pub=S.pub;
+}
+function renderGrades(){
+  const btn=g=>{const gr=P().grades[g];const all=SEMS.flatMap(m=>gr[m].subjects.flatMap(x=>x.units));const p=pct(all);
+    return `<button class="gbtn" data-grade="${g}" aria-pressed="${P().grade===g}" aria-label="${GNAME[g]}，完成 ${p}%"><b>${GSHORT[g]}</b><i><span style="width:${p}%"></span></i><small>${p}%</small></button>`};
+  $("grades").innerHTML=`<div class="gset"><span class="lbl">國小</span><div class="gbtns">${[1,2,3,4,5,6].map(btn).join("")}</div></div>
+  <div class="gset"><span class="lbl">國中</span><div class="gbtns">${[7,8,9].map(btn).join("")}</div></div>
+  <div class="gset"><span class="lbl">學期</span><div class="semseg">${SEMS.map(m=>`<button data-sem="${m}" aria-pressed="${GR().sem===m}">${m}學期</button>`).join("")}</div></div>`;
+}
+function renderSummary(){
+  const all=G().subjects.flatMap(s=>s.units);const c={todo:0,doing:0,done:0};all.forEach(u=>c[u.status]++);
+  const t=all.length||1;
+  $("summary").innerHTML=`<span>${PUBS.find(p=>p[0]===S.pub)[1]}版・${GNAME[P().grade]}${GR().sem}學期 共 <b>${G().subjects.length}</b> 科、<b>${all.length}</b> 個單元</span>
+  <span>已完成 <b>${c.done}</b>　備課中 <b>${c.doing}</b>　未開始 <b>${c.todo}</b></span>
+  <div class="bar" aria-hidden="true"><span style="width:${c.done/t*100}%;background:var(--done)"></span><span style="width:${c.doing/t*100}%;background:var(--doing)"></span></div>
+  ${hasData(S.pub,P().grade)?`<p class="srcnote">單元依 115 學年度各校公開課程計畫整理。${(NOTES[P().grade]||{})[S.pub]?NOTES[P().grade][S.pub]+"。":""}</p>`:`<p class="srcnote">此年級尚未導入出版社單元，目前為空白範本。</p>`}`;
+}
+function renderChips(){
+  $("chips").innerHTML=G().subjects.map(s=>{const lt=s.units.filter(u=>unitTiming(u)==="late").length;return `<button class="chip" aria-pressed="${s.id===G().sel}" data-subj="${s.id}">${esc(s.name)} <small>${pct(s.units)}%</small>${lt?`<span class="late">落後 ${lt}</span>`:""}</button>`}).join("")
+   +`<button class="chip add" id="addSubject">＋ 新增科目</button>`;
+}
+function ring(u){
+  const n=u.checks.length,d=u.checks.filter(c=>c.done).length;
+  const frac=u.status==="done"?1:(n?d/n:0);const C=2*Math.PI*24;
+  const col=u.status==="done"?"var(--done)":u.status==="doing"?"var(--doing)":"var(--todo)";
+  return `<svg viewBox="0 0 56 56" aria-hidden="true"><circle cx="28" cy="28" r="24" fill="var(--surface)" stroke="var(--line)" stroke-width="4"/>
+  <circle class="prog" cx="28" cy="28" r="24" fill="none" stroke="${col}" stroke-width="4" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-frac)}" transform="rotate(-90 28 28)"/>
+  ${u.status==="done"?`<circle cx="28" cy="28" r="18" fill="color-mix(in srgb, var(--done) 14%, transparent)"/>`:""}</svg>`;
+}
+function renderTree(){
+  const s=subj();
+  if(!s){$("treePanel").innerHTML=`<p class="empty">這個版本還沒有科目。按上方「＋ 新增科目」開始建立。</p>`;return}
+  let head;
+  if(editingSubject){
+    head=`<div class="stack" style="width:100%">
+      <div class="row"><div class="field"><label for="sName">科目名稱</label><input id="sName" value="${esc(s.name)}"></div>
+      <div class="field"><label for="sGrade">備註</label><input id="sGrade" value="${esc(s.grade)}" placeholder="例：每週 4 節"></div></div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+        <button class="primary" id="sDone">完成</button>
+        ${confirming==="subject"?`<span class="confirm">刪除「${esc(s.name)}」及其 ${s.units.length} 個單元？<button class="danger solid" id="sDelYes">確定刪除</button><button class="ghost" id="cancelConfirm">取消</button></span>`
+        :`<button class="danger" id="sDel">刪除科目</button>`}
+      </div></div>`;
+  }else{
+    head=`<div><h2>${esc(s.name)}</h2><p class="sub">${GNAME[P().grade]}${GR().sem}學期${s.grade?"・"+esc(s.grade):""}・完成 ${pct(s.units)}%</p></div><button class="ghost" id="editSubject">編輯科目</button>`;
+  }
+  const items=s.units.map((u,i)=>{
+    const prev=s.units[i-1];
+    const tm0=unitTiming(u);
+    const locked=i>0&&prev.status!=="done"&&u.status==="todo"&&!tm0;
+    const linked=u.status==="done"&&s.units[i+1]&&s.units[i+1].status!=="todo";
+    const d=u.checks.filter(c=>c.done).length;const tm=unitTiming(u);
+    return `<li class="node ${u.status} ${locked?"locked":""} ${linked||u.status==="done"?"linked":""} ${u.id===G().unit?"sel":""}">
+      <button class="orb" data-unit="${u.id}" aria-label="第 ${i+1} 個單元：${esc(u.name)}">${ring(u)}<span class="num">${i+1}</span></button>
+      <button class="card" data-unit="${u.id}">
+        <span class="name">${esc(u.name)}</span>
+        <span class="meta"><span class="pill ${u.status}">${ST[u.status]}</span>${tm==="now"?`<span class="pill now">本週</span>`:tm==="late"?`<span class="pill late">落後</span>`:""}
+        ${u.week?`<span>第 ${esc(u.week)} 週</span>`:""}${u.periods?`<span>${esc(u.periods)} 節</span>`:""}
+        <span>備課 ${d}/${u.checks.length}</span>${u.links&&u.links.length?`<span>資源 ${u.links.length}</span>`:""}${u.logs&&u.logs.length?`<span>紀錄 ${u.logs.length}</span>`:""}${locked?`<span>等待前一單元完成</span>`:""}</span>
+      </button></li>`}).join("");
+  $("treePanel").innerHTML=`<div class="panel-head">${head}</div>
+    ${s.units.length?`<ol class="tree">${items}</ol>`:`<p class="empty">還沒有單元。按下方按鈕新增第一個單元。</p>`}
+    <button class="addunit" id="addUnit">＋ 新增單元</button>`;
+}
+function renderEditor(){
+  const s=subj(),u=ensureUnit(unit());
+  if(!s||!u){$("editor").innerHTML=`<p class="empty">點選左側任一單元節點，在這裡編輯名稱、進度、順序與備課清單。</p>`;return}
+  const i=s.units.indexOf(u);
+  $("editor").innerHTML=`
+  <div class="panel-head" style="margin:0"><h2>單元設定</h2><span class="pill ${u.status}">${ST[u.status]}</span></div>
+  <div class="field"><label for="uName">單元名稱</label><input id="uName" value="${esc(u.name)}"></div>
+  <div class="field"><span class="lbl">順序</span>
+    <div class="order"><b>第 ${i+1} / ${s.units.length} 個</b>
+    <button class="ghost" id="up" ${i===0?"disabled":""}>↑ 上移</button><button class="ghost" id="down" ${i===s.units.length-1?"disabled":""}>↓ 下移</button></div></div>
+  <div class="row">
+    <div class="field"><label for="uWeek">週次</label><input id="uWeek" value="${esc(u.week)}" placeholder="例：3–4"></div>
+    <div class="field"><label for="uPer">節數</label><input id="uPer" value="${esc(u.periods)}" inputmode="numeric" placeholder="例：8"></div>
+  </div>
+  <div class="field"><span class="lbl">進度</span>
+    <div class="seg">${Object.entries(ST).map(([k,n])=>`<button class="${k}" data-status="${k}" aria-pressed="${u.status===k}">${n}</button>`).join("")}</div></div>
+  <hr>
+  <div class="field"><span class="lbl">備課清單（${u.checks.filter(c=>c.done).length}/${u.checks.length}）</span>
+    <ul class="checks">${u.checks.map(c=>`<li class="${c.done?"ok":""}"><input type="checkbox" id="ck-${c.id}" data-check="${c.id}" ${c.done?"checked":""}><span><label for="ck-${c.id}">${esc(c.t)}</label></span><button class="x" data-delcheck="${c.id}" aria-label="移除 ${esc(c.t)}">×</button></li>`).join("")}</ul>
+    <form class="inline" id="checkForm"><input id="newCheck" placeholder="新增備課項目，例：教具準備"><button class="ghost" type="submit">加入</button></form></div>
+  <hr>
+  <div class="field"><span class="lbl">自訂欄位</span>
+    <div class="stack">${u.fields.map(f=>`<div class="kv"><input id="fk-${f.id}" data-fk="${f.id}" value="${esc(f.k)}" placeholder="欄位名稱" aria-label="欄位名稱"><input id="fv-${f.id}" data-fv="${f.id}" value="${esc(f.v)}" placeholder="內容" aria-label="欄位內容"><button class="x" data-delfield="${f.id}" aria-label="移除欄位">×</button></div>`).join("")||`<p class="note" style="margin:0">可加入「學習重點」「教學資源連結」「備註」等你需要的欄位。</p>`}</div>
+    <button class="ghost" id="addField" style="justify-self:start">＋ 新增欄位</button></div>
+  <hr>
+  <div class="field"><span class="lbl">教學資源（${u.links.length}）</span>
+    ${u.links.length?`<ul class="links">${u.links.filter(l=>/^https?:\/\//i.test(l.url||"")).map(l=>`<li><span class="ltype">${esc(l.type)}</span><a href="${esc(l.url)}" target="_blank" rel="noopener noreferrer">${esc(l.label||hostOf(l.url))}<span class="host">${esc(hostOf(l.url))}</span></a><button class="x" data-dellink="${l.id}" aria-label="移除 ${esc(l.label||l.url)}">×</button></li>`).join("")}</ul>`:`<p class="note" style="margin:0">把這個單元用到的簡報、學習單、Padlet 牆或影片網址放在這裡，點一下就能開啟。</p>`}
+    <form class="linkform" id="linkForm">
+      <select id="linkType" aria-label="資源類型">${LTYPES.map(t=>`<option${t===lastLinkType?" selected":""}>${t}</option>`).join("")}</select>
+      <input id="linkLabel" placeholder="名稱，例：異分母加減簡報">
+      <input class="full" id="linkUrl" inputmode="url" placeholder="網址，例：padlet.com/…" aria-label="網址">
+      <button class="ghost full" type="submit">加入資源</button>
+      <p class="msg err full" id="linkMsg" aria-live="polite" style="margin:0"></p>
+    </form></div>
+  <hr>
+  <div class="field"><span class="lbl">教學紀錄與反思（${u.logs.length}）</span>
+    <form class="logform" id="logForm">
+      <div class="row2"><input type="date" id="logDate" value="${todayStr()}" aria-label="日期"><input id="logClass" placeholder="班級，例：501" aria-label="班級"></div>
+      <textarea id="logText" placeholder="學生反應、時間掌握、下次要調整的地方……" aria-label="紀錄內容"></textarea>
+      <button class="ghost" type="submit" style="justify-self:start">加入紀錄</button>
+    </form>
+    ${u.logs.length?`<ul class="logs">${[...u.logs].sort((a,b)=>(b.date||"").localeCompare(a.date||"")).map(g=>`<li><span class="lh"><b>${esc(g.date)}</b>${g.cls?`<span>${esc(g.cls)}</span>`:""}<button class="x" data-dellog="${g.id}" aria-label="刪除這筆紀錄">×</button></span><p>${esc(g.text)}</p></li>`).join("")}</ul>`:`<p class="note" style="margin:0">還沒有紀錄。教完後寫下幾句，明年教同一課時就能參考。</p>`}
+  </div>
+  <hr>
+  ${confirming==="unit"?`<div class="confirm">刪除單元「${esc(u.name)}」？<button class="danger solid" id="uDelYes">確定刪除</button><button class="ghost" id="cancelConfirm">取消</button></div>`
+   :`<button class="danger" id="uDel" style="justify-self:start">刪除單元</button>`}`;
+}
+const LTYPES=["簡報","學習單","Padlet","影片","網站","其他"];
+function normUrl(v){v=(v||"").trim();if(!v)return "";if(!/^https?:\/\//i.test(v))v="https://"+v;try{const x=new URL(v);return /^https?:$/.test(x.protocol)&&x.hostname.includes(".")?x.href:""}catch(e){return ""}}
+function hostOf(v){try{return new URL(v).hostname.replace(/^www\./,"")}catch(e){return ""}}
+function todayStr(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`}
+function ensureUnit(u){if(u){if(!Array.isArray(u.links))u.links=[];if(!Array.isArray(u.logs))u.logs=[]}return u}
+let lastLinkType="簡報";
+function renderAll(){renderSync();renderTabs();renderGrades();renderSummary();renderWeek();renderChips();renderTree();renderEditor()}
+function soft(){save();renderGrades();renderSummary();renderWeek();renderChips();renderTree()}
+
+document.addEventListener("click",e=>{
+  const t=e.target.closest("button");if(!t)return;
+  const s=subj(),u=unit();
+  if(t.dataset.pub){const q=S.pubs[t.dataset.pub];location.hash=t.dataset.pub+"-"+q.grade+"-"+(q.grades[q.grade].sem==="下"?2:1);return}
+  if(t.dataset.grade){const g=+t.dataset.grade;location.hash=S.pub+"-"+g+"-"+(P().grades[g].sem==="下"?2:1);return}
+  if(t.dataset.sem){location.hash=S.pub+"-"+P().grade+"-"+(t.dataset.sem==="下"?2:1);return}
+  if(t.dataset.subj){G().sel=t.dataset.subj;const ns=subj();G().unit=ns.units[0]?.id;confirming=null;editingSubject=false;saveLocal();renderAll();return}
+  if(t.dataset.mode){switchMode(t.dataset.mode);return}
+  if(t.dataset.jump){const [sid,uid2]=t.dataset.jump.split("|");G().sel=sid;G().unit=uid2;confirming=null;editingSubject=false;saveLocal();renderAll();$("treePanel").scrollIntoView({behavior:"smooth",block:"start"});return}
+  if(t.dataset.unit){G().unit=t.dataset.unit;confirming=null;saveLocal();renderTree();renderEditor();
+    if(matchMedia("(max-width:820px)").matches)$("editor").scrollIntoView({behavior:"smooth",block:"start"});return}
+  if(t.dataset.status&&u){u.status=t.dataset.status;if(u.status==="done")u.checks.forEach(c=>c.done=true);save();renderAll();return}
+  if(t.dataset.delcheck&&u){u.checks=u.checks.filter(c=>c.id!==t.dataset.delcheck);save();renderAll();return}
+  if(t.dataset.dellink&&u){u.links=u.links.filter(l=>l.id!==t.dataset.dellink);save();renderEditor();renderTree();return}
+  if(t.dataset.dellog&&u){u.logs=u.logs.filter(g=>g.id!==t.dataset.dellog);save();renderEditor();renderTree();return}
+  if(t.dataset.delfield&&u){u.fields=u.fields.filter(f=>f.id!==t.dataset.delfield);save();renderEditor();return}
+  switch(t.id){
+    case"addSubject":{const ns={id:uid(),name:"新科目",grade:"",units:[]};G().subjects.push(ns);G().sel=ns.id;G().unit=null;editingSubject=true;save();renderAll();$("sName").select();break}
+    case"editSubject":editingSubject=true;renderTree();break;
+    case"sDone":editingSubject=false;confirming=null;renderTree();break;
+    case"sDel":confirming="subject";renderTree();break;
+    case"sDelYes":G().subjects=G().subjects.filter(x=>x.id!==s.id);G().sel=G().subjects[0]?.id;G().unit=subj()?.units[0]?.id;confirming=null;editingSubject=false;save();renderAll();break;
+    case"cancelConfirm":confirming=null;renderTree();renderEditor();break;
+    case"addUnit":{const nu=mkUnit(`第 ${s.units.length+1} 單元`);s.units.push(nu);G().unit=nu.id;save();renderAll();$("uName").select();break}
+    case"up":case"down":{const i=s.units.indexOf(u),j=t.id==="up"?i-1:i+1;[s.units[i],s.units[j]]=[s.units[j],s.units[i]];save();renderAll();$(t.id)?.focus();break}
+    case"addField":u.fields.push({id:uid(),k:"",v:""});save();renderEditor();$("fk-"+u.fields.at(-1).id).focus();break;
+    case"uDel":confirming="unit";renderEditor();break;
+    case"uDelYes":{const i=s.units.indexOf(u);s.units.splice(i,1);G().unit=s.units[Math.max(0,i-1)]?.id;confirming=null;save();renderAll();break}
+    case"wkSet":showWeekSet=!showWeekSet;renderWeek();break;
+    case"wkSetDone":showWeekSet=false;renderWeek();break;
+    case"wkGoSem":{const ni=nowInfo();if(ni)location.hash=S.pub+"-"+P().grade+"-"+(ni.sem==="下"?2:1);break}
+    case"btnExport":exportData();break;
+    case"btnImport":importData();break;
+    case"btnReset":
+      if(t.dataset.armed){resetTree(defaultState());t.textContent="恢復範例資料";delete t.dataset.armed;msg("已恢復範例資料。","ok")}
+      else{t.dataset.armed="1";t.textContent="再按一次確認（會覆蓋目前資料）"}
+      break;
+  }
+});
+document.addEventListener("input",e=>{
+  const el=e.target,s=subj(),u=unit();
+  if(el.id==="sName"&&s){s.name=el.value;save();renderSummary();renderChips();return}
+  if(el.id==="sGrade"&&s){s.grade=el.value;save();return}
+  if(!u)return;
+  if(el.id==="uName"){u.name=el.value;soft()}
+  else if(el.id==="uWeek"){u.week=el.value;soft()}
+  else if(el.id==="uPer"){u.periods=el.value;soft()}
+  else if(el.dataset.fk){u.fields.find(f=>f.id===el.dataset.fk).k=el.value;save()}
+  else if(el.dataset.fv){u.fields.find(f=>f.id===el.dataset.fv).v=el.value;save()}
+});
+document.addEventListener("change",e=>{
+  const el=e.target,u=unit();
+  if(el.id==="st1"||el.id==="st2"){S.settings={...(S.settings||DEFAULT_SETTINGS),[el.id==="st1"?"上":"下"]:el.value};saveLocal();markDirty("meta");renderWeek();renderChips();renderTree();return}
+  if(el.dataset.check&&u){const c=u.checks.find(c=>c.id===el.dataset.check);c.done=el.checked;
+    const d=u.checks.filter(c=>c.done).length;
+    if(d===u.checks.length&&u.checks.length)u.status="done";else if(d>0)u.status="doing";else if(u.status==="done")u.status="doing";
+    save();renderAll();$("ck-"+c.id)?.focus()}
+});
+document.addEventListener("submit",e=>{
+  if(e.target.id==="linkForm"){e.preventDefault();const u=ensureUnit(unit());if(!u)return;
+    const url=normUrl($("linkUrl").value);
+    if(!url){$("linkMsg").textContent="網址看起來不完整，請貼上完整的網址，例如 https://padlet.com/…";$("linkUrl").focus();return}
+    lastLinkType=$("linkType").value;
+    u.links.push({id:uid(),type:lastLinkType,label:$("linkLabel").value.trim(),url});save();renderEditor();renderTree();$("linkUrl").focus();return}
+  if(e.target.id==="logForm"){e.preventDefault();const u=ensureUnit(unit());if(!u)return;
+    const text=$("logText").value.trim();if(!text){$("logText").focus();return}
+    u.logs.push({id:uid(),date:$("logDate").value||todayStr(),cls:$("logClass").value.trim(),text});save();renderEditor();renderTree();$("logText").focus();return}
+  if(e.target.id!=="checkForm")return;e.preventDefault();
+  const u=unit(),v=$("newCheck").value.trim();if(!u||!v)return;
+  u.checks.push({id:uid(),t:v,done:false});if(u.status==="done")u.status="doing";save();renderAll();$("newCheck").focus();
+});
+
+function msg(t,k){const m=$("backupMsg");m.textContent=t;m.className="msg "+(k||"")}
+function exportData(){
+  const txt=JSON.stringify(S);$("backupText").value=txt;
+  try{navigator.clipboard.writeText(txt).then(()=>msg("備份已複製，可貼到記事本或雲端文件保存。","ok"),()=>{$("backupText").select();msg("無法自動複製，文字已全選，請手動複製。")})}
+  catch(err){$("backupText").select();msg("無法自動複製，文字已全選，請手動複製。")}
+}
+function importData(){
+  try{const d=JSON.parse($("backupText").value);let n;if(!valid(d)){if(d&&d.pubs&&d.pubs.hanlin&&d.pubs.hanlin.grades)n=migrateOld(d);else throw 0}else n=d;resetTree(n);msg("已匯入備份資料。","ok")}
+  catch(err){msg("無法匯入：請貼上本頁「產生備份」產出的完整文字。","err")}
+}
+function resetTree(n){
+  if(!n.settings)n.settings={...DEFAULT_SETTINGS};
+  TREES[SYNC.mode]=n;S=n;saveLocal();markAll();applyHash();
+}
+function applyHash(){
+  const [h,g,m]=location.hash.slice(1).split("-");
+  if(PUBS.some(p=>p[0]===h))S.pub=h;
+  const gn=parseInt(g,10);if(GRADES.includes(gn))P().grade=gn;
+  if(m==="1"||m==="2")GR().sem=m==="2"?"下":"上";
+  confirming=null;editingSubject=false;saveLocal();renderAll();
+}
+window.addEventListener("hashchange",applyHash);
+applyHash();
+initCloud();
+</script>
+
+</body></html>
